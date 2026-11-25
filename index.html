@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FacchiNelli - Energia Casa</title>
+<script>
+// ── COSTANTE VERSIONE PROGRAMMA ──
+const APP_VERSION_DATE = '23/11/2026'; // aggiornare quando il programma è pronto per l'uso
+const APP_VERSION = '1.0.0';
+const LS_DISCLAIMER_KEY = 'energiaCasaDisclaimer';
+</script>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --border: #dde1e7;
+  --text: #1a1d23;
+  --muted: #6b7280;
+  --luce: #d97706;
+  --gas: #2563eb;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --green-border: #bbf7d0;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --orange: #ea580c;
+  --yellow-bg: #fefce8;
+  --purple: #7c3aed;
+  --label-w: 150px;
+  --col-xs: 46px;
+  --col-s: 56px;
+  --col-m: 82px;
+  --col-l: 96px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ── DISCLAIMER MODAL ── */
+#disclaimer-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.65); display: flex;
+  align-items: center; justify-content: center; padding: 20px;
+}
+#disclaimer-overlay.hidden { display: none; }
+#disclaimer-box {
+  background: #fff; border-radius: 12px; padding: 28px 32px;
+  max-width: 560px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+#disclaimer-box h2 { font-size: 17px; font-weight: 800; margin-bottom: 14px; color: var(--text); }
+#disclaimer-box p  { font-size: 13px; line-height: 1.65; color: var(--text); margin-bottom: 10px; }
+#disclaimer-box .disc-check {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--yellow-bg); border: 1px solid #fde68a;
+  border-radius: 8px; padding: 12px; margin: 16px 0;
+  font-size: 13px; line-height: 1.5; cursor: pointer;
+}
+#disclaimer-box .disc-check input { margin-top: 2px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+#disc-btn-ok { opacity: .4; pointer-events: none; transition: opacity .2s; }
+#disc-btn-ok.active { opacity: 1; pointer-events: auto; }
+#disc-blocked { display: none; position: fixed; inset: 0; z-index: 9999;
+  background: #f0f2f5; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+#disc-blocked.show { display: flex; }
+
+/* ── TOPBAR ── */
+.topbar { display: flex; align-items: center; gap: 12px;
+  background: #fff; border-bottom: 2px solid var(--border); padding: 8px 20px;
+  position: sticky; top: 0; z-index: 300; box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  flex-wrap: wrap; }
+.topbar-title { font-size: 16px; font-weight: 800; color: #1a56db;
+  letter-spacing:-.02em; white-space:nowrap; margin-right: 4px; }
+.topbar-title span { color: var(--purple); }
+.topbar-title .topbar-sub { color: #555; font-weight: 600; }
+.topbar-sep { width:1px; height:28px; background:var(--border); flex-shrink:0; }
+.profilo-area { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
+.profilo-select { padding:5px 8px; border:1px solid var(--border); border-radius:7px;
+  font-size:13px; font-weight:600; color:var(--text); background:#fff;
+  cursor:pointer; max-width:160px; }
+.profilo-select:focus { outline:none; border-color:var(--purple); }
+.topbar-actions { display:flex; gap:6px; align-items:center; margin-left:auto; }
+
+/* ── MAIN ── */
+.main { max-width: 1400px; margin: 0 auto; padding: 16px 20px; }
+.section { background: #fff; border-radius: 10px; margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
+.section-hdr { display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); gap: 8px; }
+.section-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+.section-body { padding: 14px 16px; }
+
+/* ── BOTTONI ── */
+.btn { padding: 7px 14px; border: none; border-radius: 7px; font-size: 12px;
+  font-weight: 600; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+.btn:hover { opacity: .82; }
+.btn-primary { background: var(--purple); color: #fff; }
+.btn-neutral { background: #e5e7eb; color: var(--text); }
+.btn-sm { padding: 5px 11px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; font-size: 11px; }
+.btn-icon { background: none; border: none; cursor: pointer; font-size: 12px;
+  padding: 2px 5px; color: var(--muted); border-radius: 4px; }
+.btn-icon:hover { color: var(--red); background: var(--red-bg); }
+.btn-add { background: none; border: 1px dashed var(--border); border-radius: 7px;
+  padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all .15s; }
+.btn-add:hover { border-color: var(--purple); color: var(--purple); background: #f5f3ff; }
+
+/* ── FORM ── */
+.fg { display: flex; flex-direction: column; gap: 3px; }
+.fg-row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.fg-row label { font-size:12px; color:var(--muted); font-weight:600; flex:1; }
+.fg label { font-size: 11px; color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em; }
+.fg input, .fg select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px;
+  font-size: 13px; color: var(--text); background: #fff; font-family: inherit; }
+.fg input:focus { outline: none; border-color: var(--purple); }
+.form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.flex-gap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; }
+.text-muted { color: var(--muted); font-size: 12px; }
+.hidden { display: none !important; }
+/* Campo ARERA in override manuale */
+.ci[data-manual="1"] { border-color: #2563eb !important; background: #eff6ff !important; }
+.ci[data-manual="1"]:focus { border-color: #1d4ed8 !important; }
+
+/* ── IMPOSTAZIONI ── */
+.imp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 8px; }
+.imp-box { background: var(--bg); border-radius: 8px; padding: 9px 12px; }
+.imp-label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing:.05em; margin-bottom:3px; }
+.imp-val { font-size: 14px; font-weight: 700; }
+.imp-val.luce { color: var(--luce); }
+.imp-val.gas  { color: var(--gas); }
+
+/* ── STORICO ── */
+.storico-wrap { overflow-x: auto; }
+table.storico { border-collapse: collapse; table-layout: fixed; width: max-content; }
+table.storico th, table.storico td {
+  border: 1px solid var(--border); padding: 5px 7px;
+  white-space: nowrap; font-size: 12px; vertical-align: middle; }
+table.storico th { background: var(--bg); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing:.05em; color: var(--muted); text-align: right; }
+table.storico td.lbl, table.storico th.lbl {
+  width: var(--label-w); font-weight: 600; text-align: left; white-space:normal; word-break:break-word;
+  background: var(--bg); position: sticky; left: 0; z-index: 2; border-right: 2px solid var(--border); }
+table.storico td.cm { width: var(--col-m); text-align: right; }
+table.storico th.cm { width: var(--col-m); text-align: right; }
+table.storico td.tot { width: 90px; text-align: right; font-weight: 700;
+  background: #f8fafc; border-left: 2px solid var(--border); }
+table.storico th.tot { width: 90px; background: #f8fafc; border-left: 2px solid var(--border); }
+table.storico td input.ci {
+  width: 100%; border: none; background: transparent; text-align: right;
+  font-size: 12px; color: var(--text); padding: 0; outline: none; cursor: text;
+  -moz-appearance: textfield; }
+table.storico td input.ci::-webkit-outer-spin-button,
+table.storico td input.ci::-webkit-inner-spin-button { -webkit-appearance: none; }
+table.storico td input.ci:focus
+  { outline: 1px solid var(--gas); border-radius: 3px; background: #e8f4ff; padding: 0 2px; }
+
+/* ── OFFERTE TABLE ── */
+.offerte-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+table.offerte { border-collapse: collapse; table-layout: fixed; width: max-content; min-width: 100%; }
+table.offerte th, table.offerte td {
+  border: 1px solid var(--border); padding: 5px 6px;
+  font-size: 12px; vertical-align: middle; white-space: nowrap; }
+table.offerte thead th {
+  background: var(--bg); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  text-align: center; box-shadow: 0 1px 0 var(--border); overflow: visible; }
+table.offerte thead th.lbl { text-align: left; }
+
+table.offerte td.lbl {
+  width: var(--label-w); font-weight: 700; white-space: normal; word-break: break-word;
+  position: sticky; left: 0; z-index: 5; background: #fff; border-right: 2px solid var(--border); }
+table.offerte td.lbl.luce-row { border-left: 3px solid var(--luce); }
+table.offerte td.lbl.gas-row  { border-left: 3px solid var(--gas); }
+
+table.offerte td.tipo { width: 44px; text-align: center; font-weight: 700; font-size: 11px; }
+table.offerte th.tipo { width: 44px; }
+table.offerte td.col-xs { width: var(--col-xs); text-align: right; }
+table.offerte th.col-xs { width: var(--col-xs); }
+table.offerte td.col-s { width: var(--col-s); text-align: right; }
+table.offerte th.col-s { width: var(--col-s); }
+table.offerte td.col-m { width: var(--col-m); text-align: right; }
+table.offerte th.col-m { width: var(--col-m); }
+table.offerte td.col-t { width: 90px; text-align: left; }
+table.offerte th.col-t { width: 90px; }
+table.offerte td.ris { width: 160px; text-align: right; font-weight: 700; }
+table.offerte th.ris { width: 160px; }
+table.offerte td.ris.best { background: var(--green-bg); color: var(--green); }
+table.offerte td.note-cell { width: 32px; text-align: center; cursor: pointer; color: var(--muted); }
+table.offerte th.note-cell { width: 32px; }
+table.offerte td.azioni { width: 36px; text-align: center; }
+table.offerte th.azioni { width: 36px; }
+
+table.offerte tr.sep td { background: var(--bg); height: 5px; padding: 0;
+  border: none; border-top: 1px solid var(--border); }
+table.offerte tr.sep td.lbl { position: sticky; left: 0; z-index: 5; }
+
+table.offerte tr.best-row td { background: var(--green-bg); }
+table.offerte tr.best-row td.lbl { border-left-color: var(--green); }
+
+table.offerte tr.add-row td { background: #fafafa; border-top: none; padding: 3px 8px; }
+
+table.offerte td input.ci {
+  width: 100%; border: none; background: transparent; text-align: right;
+  font-size: 12px; color: var(--text); padding: 0; outline: none; cursor: text;
+  -moz-appearance: textfield; }
+table.offerte td input.ci::-webkit-outer-spin-button,
+table.offerte td input.ci::-webkit-inner-spin-button { -webkit-appearance: none; }
+table.offerte td input.ci:focus
+  { outline: 1px solid var(--purple); border-radius: 3px; background: #f5f3ff; padding: 0 2px; }
+table.offerte td input.ci.left { text-align: left; }
+table.offerte td input.ci.c-err  { background: var(--red-bg) !important; color: var(--red); }
+table.offerte td input.ci.c-warn { background: var(--yellow-bg) !important; }
+
+.radio-yn { display: flex; flex-direction: row; gap: 4px; align-items: center; justify-content: center; }
+.radio-yn label { display: flex; align-items: center; gap: 3px; font-size: 10px;
+  cursor: pointer; white-space: nowrap; color: var(--text); }
+.radio-yn input[type=radio] { width: 11px; height: 11px; cursor: pointer;
+  accent-color: var(--green); flex-shrink: 0; }
+
+/* note popup */
+.note-popup { position: fixed; z-index: 1000; background: #fff; border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.13);
+  width: 260px; display: none; }
+.note-popup.open { display: block; }
+.note-popup textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 8px; font-size: 12px; resize: vertical; min-height: 80px;
+  font-family: inherit; color: var(--text); }
+.note-popup textarea:focus { outline: none; border-color: var(--purple); }
+
+/* ── RANKING ── */
+.ranking-item { background: var(--bg); border-radius: 8px; margin-bottom: 6px;
+  border: 1px solid var(--border); overflow: hidden; }
+.ranking-item.rank-1 { border-color: var(--green); background: var(--green-bg); }
+.ranking-hdr { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  font-size: 13px; cursor: pointer; }
+.ranking-hdr:hover { background: rgba(0,0,0,.03); }
+.rank-num { font-size: 17px; font-weight: 800; color: var(--muted); min-width: 28px; }
+.rank-1 .rank-num { color: var(--green); }
+.rank-name { flex: 1; font-weight: 600; }
+.rank-val { font-weight: 700; font-size: 14px; }
+.rank-delta { font-size: 11px; color: var(--red); }
+.rank-1 .rank-delta { color: var(--green); }
+.rank-toggle { font-size: 11px; color: var(--muted); margin-left: 4px; }
+
+/* dettaglio calcolo */
+.rank-detail { display: none; border-top: 1px solid var(--border);
+  padding: 12px 14px; background: #fff; }
+.rank-detail.open { display: block; }
+.detail-cols { display: flex; gap: 16px; flex-wrap: wrap; }
+.detail-block { flex: 1; min-width: 200px; }
+.detail-block h4 { font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; margin-bottom: 8px; }
+.detail-block h4.luce { color: var(--luce); }
+.detail-block h4.gas  { color: var(--gas); }
+.detail-line { display: flex; justify-content: space-between; align-items: baseline;
+  padding: 3px 0; border-bottom: 1px solid #f0f2f5; font-size: 12px; gap: 8px; }
+.detail-line:last-child { border-bottom: none; }
+.detail-line .dl { color: var(--muted); }
+.detail-line .dv { font-weight: 600; white-space: nowrap; }
+.detail-line.subtotal { margin-top:4px; padding-top:4px; border-top:1px solid var(--border); font-size:12px; }
+.detail-line.subtotal .dl { color: var(--text); font-weight:600; }
+.detail-line.total { margin-top: 4px; padding-top: 6px; border-top: 2px solid var(--border);
+  border-bottom: none; font-weight: 700; font-size: 13px; }
+.detail-formula { font-size: 11px; color: var(--muted); background: var(--bg);
+  border-radius: 6px; padding: 6px 10px; margin-top: 8px; font-family: monospace; word-break: break-all; }
+
+/* ── BADGE ── */
+.badge { display: inline-block; padding: 2px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; }
+.badge-luce { background: #fef3c7; color: #92400e; }
+.badge-gas  { background: #dbeafe; color: #1e40af; }
+
+/* ── TOOLTIP ── */
+[data-tip] { cursor: help; }
+#tip-box { position: fixed; background: #1a1d23; color: #fff; padding: 4px 8px;
+  border-radius: 5px; font-size: 11px; white-space: nowrap; pointer-events: none;
+  z-index: 9999; display: none; max-width: 280px; white-space: normal; line-height: 1.4; }
+
+/* file input nascosto */
+#imp-file { display:none; }
+
+/* modal profilo */
+.modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;
+  display:none;align-items:center;justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:#fff;border-radius:12px;padding:24px;width:320px;
+  box-shadow:0 12px 40px rgba(0,0,0,.2); }
+.modal-box h3 { font-size:15px;font-weight:700;margin-bottom:16px; }
+.modal-box input { width:100%;padding:8px 10px;border:1px solid var(--border);
+  border-radius:7px;font-size:14px;font-family:inherit; }
+.modal-box input:focus { outline:none;border-color:var(--purple); }
+.modal-actions { display:flex;gap:8px;margin-top:14px;justify-content:flex-end; }
+</style>
+</head>
+<body>
+
+<!-- DISCLAIMER MODALE -->
+<!-- ── POPUP SCONTO ── -->
+<div id="sconto-overlay" class="hidden" style="position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:12px;padding:24px 28px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">✂️ Configura sconto</h3>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">TIPO SCONTO</label>
+        <select id="sc-tipo" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px" onchange="scOnChange()">
+          <option value="">— nessuno —</option>
+          <option value="eur-mese">€ / mese (importo fisso mensile)</option>
+          <option value="eur-anno">€ / anno (importo fisso annuale)</option>
+          <option value="pct-fissi">% sui corrispettivi fissi</option>
+          <option value="pct-materia">% sulla materia energia</option>
+          <option value="pct-totale">% sul totale operatore</option>
+        </select>
+      </div>
+      <div id="sc-row-valore">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px" id="sc-lbl-valore">IMPORTO</label>
+        <input id="sc-valore" type="number" min="0" step="0.01" style="width:120px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px" placeholder="0">
+      </div>
+      <div id="sc-row-durata">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">DURATA SCONTO (mesi, 0 = tutta la durata)</label>
+        <input id="sc-durata" type="number" min="0" step="1" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px" placeholder="0">
+      </div>
+      <div id="sc-preview" style="font-size:12px;color:var(--muted);min-height:18px"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">
+      <button class="btn btn-neutral btn-sm" onclick="chiudiPopupSconto()">Annulla</button>
+      <button class="btn btn-primary btn-sm" onclick="salvaPopupSconto()">✅ Applica</button>
+    </div>
+  </div>
+</div>
+
+<div id="disclaimer-overlay">
+  <div id="disclaimer-box">
+    <h2>⚠️ Avviso importante — Strumento indicativo</h2>
+    <p>
+      <strong>FacchiNelli — Energia Casa</strong> è uno strumento di stima personale per il confronto delle offerte
+      di fornitura di energia elettrica e gas nel <strong>mercato libero</strong>. I calcoli si basano sulla metodologia ARERA
+      e sui dati inseriti dall'utente, aggiornati al <strong id="disc-version-date"></strong>.
+    </p>
+    <p>
+      Questo strumento è rivolto esclusivamente alle forniture nel <strong>mercato libero</strong>
+      e non è applicabile al mercato tutelato o di salvaguardia.
+    </p>
+    <p>
+      I risultati hanno carattere puramente <strong>indicativo e orientativo</strong>.
+      L'autore non si assume alcuna responsabilità per decisioni prese sulla base delle stime
+      prodotte da questo programma. Le tariffe, le componenti regolate e i consumi reali
+      possono differire da quelli stimati.
+    </p>
+    <p>
+      Il calcolo <strong>non include il canone RAI</strong> (canone televisivo), che viene
+      addebitato separatamente nella bolletta elettrica.
+    </p>
+    <p>
+      Per una valutazione accurata si raccomanda di consultare direttamente i fornitori
+      e il <a href="https://www.ilportaleofferte.it" target="_blank" rel="noopener" style="color:var(--purple)">Portale Offerte ARERA</a>.
+    </p>
+    <label class="disc-check" for="disc-checkbox">
+      <input type="checkbox" id="disc-checkbox" onchange="discCheckChange()">
+      <span>Ho letto e compreso che questo strumento è meramente indicativo e che l'autore non si assume alcuna responsabilità per l'utilizzo dei risultati.</span>
+    </label>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+      <button class="btn btn-neutral btn-sm" onclick="discEsci()">No, esci</button>
+      <button class="btn btn-primary btn-sm" id="disc-btn-ok" onclick="discAccetta()">Accetto e proseguo</button>
+    </div>
+  </div>
+</div>
+<!-- SCHERMATA USCITA -->
+<div id="disc-blocked">
+  <div style="text-align:center;color:var(--muted)">
+    <div style="font-size:40px;margin-bottom:12px">🚫</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Accesso non consentito</div>
+    <div style="font-size:13px">Hai scelto di non accettare le condizioni d'uso.<br>Chiudi questa finestra per uscire.</div>
+  </div>
+</div>
+
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-title">⚡ FacchiNelli <span class="topbar-sub">— Energia Casa</span> 🔥</div>
+  <div class="topbar-sep"></div>
+  <!-- Profili -->
+  <div class="profilo-area">
+    <span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap">Profilo:</span>
+    <select class="profilo-select" id="profilo-select" onchange="switchProfilo(this.value)"></select>
+    <button class="btn btn-neutral btn-sm" onclick="nuovoProfilo()" title="Nuovo profilo">+</button>
+    <button class="btn btn-neutral btn-sm" onclick="rinominaProfilo()" title="Rinomina">✏️</button>
+    <button class="btn btn-neutral btn-sm" onclick="eliminaProfilo()" title="Elimina profilo" style="color:var(--red)">🗑️</button>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-actions">
+    <button class="btn btn-neutral btn-sm" onclick="apriVerificaBolletta()">🧾 Bolletta</button>
+    <button class="btn btn-neutral btn-sm" onclick="exportData()">📤 Esporta</button>
+    <button class="btn btn-neutral btn-sm" onclick="document.getElementById('imp-file').click()">📥 Importa</button>
+    <input type="file" id="imp-file" accept=".json" onchange="importData(event)">
+    <div class="topbar-sep"></div>
+    <button id="btn-modifica" class="btn btn-neutral btn-sm" onclick="toggleImp()">✏️ Impostazioni</button>
+    <button id="btn-salva-imp" class="btn btn-primary btn-sm hidden" onclick="saveImp()">✅ Salva modifiche</button>
+    <button id="btn-annulla-imp" class="btn btn-neutral btn-sm hidden" onclick="annullaImp()">✖ Annulla</button>
+    <button id="btn-aggiorna-app" class="btn btn-sm hidden" onclick="aggiornaApp()" title="Nuova versione disponibile — clicca per aggiornare" style="background:#e67e22;color:#fff;font-weight:700">🔄 Aggiorna</button>
+  </div>
+</div>
+
+<!-- Modal nuovo/rinomina profilo -->
+<div class="modal-overlay" id="modal-profilo">
+  <div class="modal-box">
+    <h3 id="modal-title">Nuovo profilo</h3>
+    <input type="text" id="modal-input" placeholder="Es. Enzo, Genitori, Suoceri…" maxlength="40">
+    <div class="modal-actions">
+      <button class="btn btn-neutral btn-sm" onclick="closeModal()">Annulla</button>
+      <button class="btn btn-primary btn-sm" onclick="confermaModal()">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div id="tip-box"></div>
+<div class="main">
+
+  <!-- 1. IMPOSTAZIONI GLOBALI -->
+  <div class="section">
+    <div class="section-hdr">
+      <span class="section-title">⚙️ Impostazioni calcolo</span>
+    </div>
+    <div class="section-body">
+      <div id="imp-view"></div>
+      <div id="imp-form" class="hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <!-- LUCE -->
+          <div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid var(--luce)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--luce);margin-bottom:8px">⚡ Luce</div>
+            <div id="imp-kwh-storico" style="margin-bottom:8px"></div>
+            <div class="fg">
+              <label>kWh/anno manuali</label>
+              <input type="number" id="i-kwh" step="1" min="0" style="width:120px" placeholder="es. 2000">
+            </div>
+            <div style="margin-top:8px;font-size:12px;display:flex;gap:12px;align-items:center">
+              <span style="color:var(--muted)">Usa per il calcolo:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                <input type="radio" name="src-kwh" id="src-kwh-storico" value="storico" onchange="aggiornaSrcKwh()"> Storico
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                <input type="radio" name="src-kwh" id="src-kwh-manuale" value="manuale" onchange="aggiornaSrcKwh()"> Manuale
+              </label>
+            </div>
+          </div>
+          <!-- GAS -->
+          <div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid var(--gas)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gas);margin-bottom:8px">🔥 Gas</div>
+            <div id="imp-smc-storico" style="margin-bottom:8px"></div>
+            <div class="fg">
+              <label>Smc/anno manuali</label>
+              <input type="number" id="i-smc" step="1" min="0" style="width:120px" placeholder="es. 600">
+            </div>
+            <div style="margin-top:8px;font-size:12px;display:flex;gap:12px;align-items:center">
+              <span style="color:var(--muted)">Usa per il calcolo:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                <input type="radio" name="src-smc" id="src-smc-storico" value="storico" onchange="aggiornaSrcSmc()"> Storico
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+                <input type="radio" name="src-smc" id="src-smc-manuale" value="manuale" onchange="aggiornaSrcSmc()"> Manuale
+              </label>
+            </div>
+          </div>
+        </div>
+        <!-- PUN / PSV -->
+        <div class="mt12">
+          <div class="text-muted" style="margin-bottom:6px">PUN vigente (€/kWh) — da <em>ilportaleofferte.it</em> o ARERA</div>
+          <div class="form-row">
+            <div class="fg"><label>Monorario</label><input type="number" id="i-mono" step="0.000001" style="width:105px" placeholder="alt. a F1/F2/F3"></div>
+            <div class="fg"><label>F1 picco</label><input type="number" id="i-f1" step="0.000001" style="width:105px"></div>
+            <div class="fg"><label>F2 intermedio</label><input type="number" id="i-f2" step="0.000001" style="width:105px"></div>
+            <div class="fg"><label>F3 fuori picco</label><input type="number" id="i-f3" step="0.000001" style="width:105px"></div>
+            <div class="fg"><label>Biorario F23</label><input type="number" id="i-bi" step="0.000001" style="width:105px"></div>
+          </div>
+        </div>
+        <div class="mt12">
+          <div class="text-muted" style="margin-bottom:6px">PSV vigente (€/Smc) — da <em>ilportaleofferte.it</em> o ARERA</div>
+          <div class="fg" style="max-width:130px"><label>PSV</label><input type="number" id="i-psv" step="0.000001"></div>
+        </div>
+        <!-- ARERA -->
+        <div class="mt12">
+          <details>
+            <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);user-select:none">
+              🏛️ Componenti ARERA regolate (trasporto, oneri, accise, IVA) — clicca per espandere
+            </summary>
+            <div style="margin-top:10px;background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Questi valori vengono usati per stimare il costo totale realistico della bolletta. Sono fissati da ARERA e uguali per tutti gli operatori. Modifica solo se conosci i valori aggiornati.</div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <!-- LUCE ARERA -->
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:var(--luce);margin-bottom:8px;text-transform:uppercase">⚡ Luce</div>
+                  <div class="fg"><label>Trasporto fisso (€/anno)</label><input type="number" id="a-L_trasportoFisso" step="0.01" style="width:100px"></div>
+                  <div class="fg"><label>Trasporto potenza (€/kW/anno)</label><input type="number" id="a-L_trasportoPotenza" step="0.01" style="width:100px"></div>
+                  <div class="fg" style="align-items:flex-start">
+                    <label>Potenza contatore</label>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <div style="display:flex;gap:6px;align-items:center">
+                        <button type="button" class="btn btn-neutral btn-sm" onclick="applicaPresetKw(3)" style="font-weight:700">3 kW</button>
+                        <button type="button" class="btn btn-neutral btn-sm" onclick="applicaPresetKw(4.5)" style="font-weight:700">4,5 kW</button>
+                        <input type="number" id="a-L_potenzakW" step="0.5" min="1" max="15" style="width:70px" onchange="checkPotenzakW(this)">
+                      </div>
+                      <div id="warn-potenza" style="display:none;font-size:11px;color:#e67e22">⚠️ Valore non standard: usa i preset 3 kW o 4,5 kW per avere i parametri ARERA corretti.</div>
+                    </div>
+                  </div>
+                  <div class="fg"><label>Trasporto variabile (€/kWh)</label><input type="number" id="a-L_trasportoVar" step="0.000001" style="width:100px"></div>
+                  <div class="fg"><label>Oneri di sistema (€/kWh)</label><input type="number" id="a-L_oneri" step="0.0001" style="width:100px"></div>
+                  <div class="fg"><label>Accise (€/kWh)</label><input type="number" id="a-L_accise" step="0.0001" style="width:100px"></div>
+                  <div class="fg"><label>Franchigia accise (kWh/anno)</label><input type="number" id="a-L_franchigia" step="1" style="width:100px"></div>
+                  <div class="fg"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="a-L_residente"> Residente (esenzione accise ≤3kW)</label></div>
+                  <div class="fg"><label title="Corrispettivo di dispacciamento — 0 per 3kW (incluso nell'F1/F2/F3 degli operatori); 0.014642 per 4.5kW">Disp. CdispD (€/kWh)</label><input type="number" id="a-L_cdispD" step="0.000001" style="width:100px"></div>
+                  <div class="fg"><label>IVA luce (%)</label><input type="number" id="a-L_iva" step="1" min="0" max="100" style="width:100px"></div>
+                  <div class="fg"><label>Link riferimento ARERA luce</label><input type="text" id="a-L_linkArera" style="width:100%"></div>
+                </div>
+                <!-- GAS ARERA -->
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:var(--gas);margin-bottom:8px;text-transform:uppercase">🔥 Gas</div>
+                  <div class="fg"><label>Trasporto fisso (€/anno)</label><input type="number" id="a-G_trasportoFisso" step="0.01" style="width:100px"></div>
+                  <div class="fg"><label>Trasporto variabile (€/Smc)</label><input type="number" id="a-G_trasportoVar" step="0.000001" style="width:100px"></div>
+                  <div class="fg"><label>Oneri di sistema (€/Smc)</label><input type="number" id="a-G_oneri" step="0.000001" style="width:100px"></div>
+                  <div class="fg"><label>PCS — potere calorifico (€/Smc)</label><input type="number" id="a-G_pcs" step="0.000001" style="width:100px"></div>
+                  <div class="fg"><label>Accise (€/Smc)</label><input type="number" id="a-G_accise" step="0.000001" style="width:100px"></div>
+                  <div class="fg"><label>Addizionale regionale (€/Smc)</label><input type="number" id="a-G_addRegionale" step="0.0001" style="width:100px"></div>
+                  <div class="fg"><label>IVA base (%)</label><input type="number" id="a-G_ivaBase" step="1" min="0" max="100" style="width:100px"></div>
+                  <div class="fg"><label>IVA extra % (oltre soglia)</label><input type="number" id="a-G_ivaExtra" step="1" min="0" max="100" style="width:100px"></div>
+                  <div class="fg"><label>Soglia IVA (Smc/anno)</label><input type="number" id="a-G_soglia" step="1" style="width:100px"></div>
+                  <div class="fg"><label>Link riferimento ARERA gas</label><input type="text" id="a-G_linkArera" style="width:100%"></div>
+                </div>
+              </div>
+              <div class="fg mt8"><label>Data aggiornamento dati ARERA</label><input type="date" id="a-dataAggiornamento" style="width:150px"></div>
+              <button class="btn btn-neutral btn-sm mt8" onclick="ripristinaArera()">↺ Ripristina valori default ARERA</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. STORICO LUCE -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-title">⚡ Storico consumi — Luce</span></div>
+    <div class="section-body" style="padding-bottom:4px">
+      <div class="storico-wrap"><div id="storico-luce"></div></div>
+    </div>
+  </div>
+
+  <!-- 3. STORICO GAS -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-title">🔥 Storico consumi — Gas</span></div>
+    <div class="section-body" style="padding-bottom:4px">
+      <div class="storico-wrap"><div id="storico-gas"></div></div>
+    </div>
+  </div>
+
+  <!-- 4. TABELLA OFFERTE -->
+  <div class="section">
+    <div class="section-hdr">
+      <span class="section-title">📋 Offerte operatori</span>
+      <button class="btn btn-neutral btn-sm" onclick="ordinaOperatori()" title="Ordina operatori in ordine alfabetico">A→Z</button>
+      <button class="btn btn-add" onclick="addOperatore()">+ Aggiungi operatore</button>
+    </div>
+    <div class="offerte-wrap" style="padding:0">
+      <div id="offerte-tbl" style="padding:0"></div>
+    </div>
+    <div style="padding:10px 16px">
+      <button class="btn btn-add" onclick="addOperatore()">+ Aggiungi operatore</button>
+    </div>
+  </div>
+
+  <!-- Banner PUN/PSV obsoleti -->
+  <div id="pun-stale-banner" style="display:none;margin:0 0 8px 0;padding:10px 14px;border-radius:8px;align-items:center;flex-wrap:wrap;gap:6px"></div>
+
+  <!-- 5. RANKING -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-title">🏆 Ranking per convenienza</span></div>
+    <div class="section-body"><div id="ranking-box"></div></div>
+  </div>
+
+  <!-- 6. VERIFICA BOLLETTA -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-title">🧾 Verifica bolletta</span></div>
+    <div class="section-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <p style="font-size:12px;color:var(--muted);margin:0">Inserisci i dati della bolletta reale per verificare l'attendibilità del modello di calcolo.</p>
+        <button class="btn btn-neutral btn-sm" onclick="vbResetArera()" title="Ricalcola le componenti ARERA dai parametri correnti">↺ Ricalcola</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- LUCE -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:800;color:var(--luce);margin-bottom:12px">⚡ Luce</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="fg-row">
+              <label>Potenza contratto</label>
+              <span style="display:flex;gap:4px;align-items:center">
+                <select id="vb-L-potenzakW" class="ci" style="width:80px" onchange="vbOnPotenzaChange()">
+                  <option value="3">3 kW</option>
+                  <option value="4.5">4,5 kW</option>
+                  <option value="altro">altro…</option>
+                </select>
+              </span>
+            </div>
+            <div id="vb-L-potenza-warn" style="display:none;font-size:11px;color:#e67e22;padding:4px 8px;background:#fff8f0;border:1px solid #f0a040;border-radius:4px">
+              ⚠️ Gestiti solo 3 kW e 4,5 kW con preset ARERA automatici. Per altri valori inserire manualmente le componenti ARERA.
+            </div>
+            <div class="fg-row"><label>Mesi in bolletta</label><input type="number" id="vb-L-mesi" class="ci" min="1" max="12" step="1" placeholder="—" style="width:70px" oninput="vbAggiornaCampiArera();vbCalcola()"></div>
+            <div class="fg-row"><label>kWh consumati</label><input type="number" id="vb-L-kwh" class="ci" min="0" placeholder="—" style="width:90px" oninput="vbAggiornaCampiArera();vbCalcola()"></div>
+            <div class="fg-row"><label>Prezzo unitario (€/kWh)</label><input type="text" id="vb-L-prezzo" class="ci" inputmode="decimal" placeholder="0,00000" style="width:90px" oninput="vbCalcola()"></div>
+            <div class="fg-row"><label>Quota comm. periodo (€)</label><input type="text" id="vb-L-quota" class="ci" inputmode="decimal" placeholder="—" style="width:90px" oninput="vbCalcola()"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Componenti ARERA periodo</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 72px 72px;gap:4px 6px;font-size:11px;color:var(--muted);font-weight:600;padding:0 2px;margin-bottom:2px">
+              <span></span><span style="text-align:right">calcolato</span><span style="text-align:right">bolletta</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 72px 72px;gap:4px 6px;align-items:center">
+              <label style="font-size:12px" title="Quota fissa trasporto + potenza, proporzionata al periodo">Trasporto fisso</label>
+              <input type="text" id="vb-L-trafisso" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-L-trafisso-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="Quota variabile trasporto (quota energia + UC3 + UC6 var)">Trasporto var.</label>
+              <input type="text" id="vb-L-travar" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-L-travar-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="Oneri di sistema: ASOS + ARIM">Oneri sistema</label>
+              <input type="text" id="vb-L-oneri" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-L-oneri-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="Corrispettivo dispacciamento CdispD (voce che alcuni operatori includono nel prezzo)">CdispD</label>
+              <input type="text" id="vb-L-cdispd" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-L-cdispd-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="Imposta erariale — domestici residenti >3 kW: 0,0227 €/kWh su tutto il consumo; ≤3 kW: franchigia 1800 kWh/anno">Accise</label>
+              <input type="text" id="vb-L-accise" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-L-accise-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+            </div>
+            <div class="fg-row">
+              <label>IVA</label>
+              <span style="display:flex;gap:6px;align-items:center">
+                <input type="number" id="vb-L-iva" class="ci" min="0" max="22" placeholder="10" style="width:52px" oninput="vbCalcola()"><span style="font-size:11px;color:var(--muted)">%</span>
+                <span id="vb-L-iva-eur" style="font-size:12px;color:var(--muted);min-width:52px;text-align:right">—</span><span style="font-size:11px;color:var(--muted)">€</span>
+              </span>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Voci extra (sconti/accrediti)</span>
+              <button class="btn btn-neutral btn-sm" onclick="vbAddVoce('L')" style="font-size:11px;padding:2px 8px">+ voce</button>
+            </div>
+            <div id="vb-L-voci"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+            <div class="fg-row"><label title="Canone TV addebitato in bolletta">Canone TV in bolletta (€)</label><input type="text" id="vb-L-canonetv" class="ci" inputmode="decimal" placeholder="0,00" style="width:90px" oninput="vbCalcola()"></div>
+            <div style="background:var(--bg-muted,#f5f5f5);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px">
+              <div style="font-weight:700;color:var(--text);margin-bottom:2px">Composizione totale</div>
+              <div style="display:flex;justify-content:space-between"><span>Materia prima (kWh × prezzo)</span><span id="vb-L-det-materia">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Quota comm.</span><span id="vb-L-det-quota">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Componenti ARERA (trasp.+oneri+accise)</span><span id="vb-L-det-arera">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>IVA</span><span id="vb-L-det-iva">—</span></div>
+              <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:3px;font-weight:700;color:var(--text)"><span>= Totale</span><span id="vb-L-det-tot">—</span></div>
+            </div>
+            <div class="fg-row" style="font-weight:700"><label>Totale calcolato (energia)</label><span id="vb-L-calc" style="font-size:14px;font-weight:800;color:var(--luce)">—</span></div>
+            <div class="fg-row" style="font-weight:600;color:var(--muted)"><label>Totale calcolato + Canone TV</label><span id="vb-L-calc-con-canone" style="font-size:13px;font-weight:700">—</span></div>
+            <div class="fg-row"><label>Totale bolletta reale (€)</label><input type="text" id="vb-L-reale" class="ci" inputmode="decimal" placeholder="—" style="width:90px;font-weight:700" oninput="vbCalcola()"></div>
+            <div class="fg-row" style="font-weight:600"><label>Scarto (energia)</label><span id="vb-L-scarto" style="font-size:13px;font-weight:700">—</span></div>
+          </div>
+        </div>
+
+        <!-- GAS -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:800;color:var(--gas);margin-bottom:12px">🔥 Gas</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="fg-row"><label>Mesi in bolletta</label><input type="number" id="vb-G-mesi" class="ci" min="1" max="12" step="1" placeholder="—" style="width:70px" oninput="vbAggiornaCampiArera();vbCalcola()"></div>
+            <div class="fg-row"><label>Smc consumati</label><input type="number" id="vb-G-smc" class="ci" min="0" placeholder="—" style="width:90px" oninput="vbAggiornaCampiArera();vbCalcola()"></div>
+            <div class="fg-row"><label>Prezzo unitario (€/Smc)</label><input type="text" id="vb-G-prezzo" class="ci" inputmode="decimal" placeholder="0,00000" style="width:90px" oninput="vbCalcola()"></div>
+            <div class="fg-row"><label>Quota comm. periodo (€)</label><input type="text" id="vb-G-quota" class="ci" inputmode="decimal" placeholder="—" style="width:90px" oninput="vbCalcola()"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Componenti ARERA periodo</div>
+              <span style="font-size:10px;color:var(--muted)" title="Parametri tarati su bolletta Bari (distributore Italgas). Le componenti di trasporto variano per distributore locale.">📍 Bari/Italgas</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 72px 72px;gap:4px 6px;font-size:11px;color:var(--muted);font-weight:600;padding:0 2px;margin-bottom:2px">
+              <span></span><span style="text-align:right">calcolato</span><span style="text-align:right">bolletta</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 72px 72px;gap:4px 6px;align-items:center">
+              <label style="font-size:12px" title="Quota fissa rete (COT+DIS+MIS) + UG2 fissa, proporzionata al periodo. IVA 22%.">Trasporto fisso</label>
+              <input type="text" id="vb-G-trafisso" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-G-trafisso-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="QTV+QTt+RS+UG1 — quota variabile rete. IVA 10%.">Trasporto var.</label>
+              <input type="text" id="vb-G-travar" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-G-travar-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="PCS — Potere Calorifico Superiore. IVA 10%.">PCS</label>
+              <input type="text" id="vb-G-pcs" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-G-pcs-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="RE+UG2var+UG3FT+UG3INT+UG3UI — oneri di sistema variabili. IVA 10%.">Oneri sistema</label>
+              <input type="text" id="vb-G-oneri" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-G-oneri-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="Imposta erariale gas. IVA 10%.">Accise</label>
+              <input type="text" id="vb-G-accise" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-G-accise-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+
+              <label style="font-size:12px" title="Addizionale regionale Puglia. IVA 10%.">Add. regionale</label>
+              <input type="text" id="vb-G-addregionale" readonly class="ci" placeholder="—" style="width:72px;background:var(--bg-muted,#f5f5f5);color:var(--muted);font-size:12px;text-align:right">
+              <input type="text" id="vb-G-addregionale-b" class="ci" inputmode="decimal" placeholder="—" style="width:72px;font-size:12px;text-align:right" oninput="vbCalcola()">
+            </div>
+            <div class="fg-row" title="IVA applicata su: materia prima, trasporto variabile, oneri, accise">
+              <label>IVA variabili (en./trasp.)</label>
+              <span style="display:flex;gap:6px;align-items:center">
+                <input type="number" id="vb-G-iva" class="ci" min="0" max="22" placeholder="10" style="width:52px" oninput="vbCalcola()"><span style="font-size:11px;color:var(--muted)">%</span>
+                <span id="vb-G-iva-eur" style="font-size:12px;color:var(--muted);min-width:52px;text-align:right">—</span><span style="font-size:11px;color:var(--muted)">€</span>
+              </span>
+            </div>
+            <div class="fg-row" title="IVA sulle quote fisse: commercializzazione e trasporto fisso (solitamente 22% sul mercato libero)">
+              <label>IVA quote fisse</label>
+              <span style="display:flex;gap:6px;align-items:center">
+                <input type="number" id="vb-G-iva-quota" class="ci" min="0" max="22" placeholder="22" style="width:52px" oninput="vbCalcola()"><span style="font-size:11px;color:var(--muted)">%</span>
+              </span>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Voci extra (sconti/accrediti)</span>
+              <button class="btn btn-neutral btn-sm" onclick="vbAddVoce('G')" style="font-size:11px;padding:2px 8px">+ voce</button>
+            </div>
+            <div id="vb-G-voci"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+            <div style="background:var(--bg-muted,#f5f5f5);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px">
+              <div style="font-weight:700;color:var(--text);margin-bottom:2px">Composizione totale</div>
+              <div style="display:flex;justify-content:space-between"><span>Materia prima (Smc × prezzo)</span><span id="vb-G-det-materia">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>PCS</span><span id="vb-G-det-pcs">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Quota comm. (IVA 22%)</span><span id="vb-G-det-quota">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Trasporto fisso (IVA 22%)</span><span id="vb-G-det-trafisso">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Trasporto var. + oneri + accise + add.reg.</span><span id="vb-G-det-arera">—</span></div>
+              <div style="display:flex;justify-content:space-between"><span>IVA totale</span><span id="vb-G-det-iva">—</span></div>
+              <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:3px;font-weight:700;color:var(--text)"><span>= Totale</span><span id="vb-G-det-tot">—</span></div>
+            </div>
+            <div class="fg-row" style="font-weight:700"><label>Totale calcolato</label><span id="vb-G-calc" style="font-size:14px;font-weight:800;color:var(--gas)">—</span></div>
+            <div class="fg-row"><label>Totale bolletta reale (€)</label><input type="text" id="vb-G-reale" class="ci" inputmode="decimal" placeholder="—" style="width:90px;font-weight:700" oninput="vbCalcola()"></div>
+            <div class="fg-row" style="font-weight:600"><label>Scarto</label><span id="vb-G-scarto" style="font-size:13px;font-weight:700">—</span></div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Note popup -->
+<div class="note-popup" id="note-popup">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <strong style="font-size:12px">📝 Note</strong>
+    <button class="btn-icon" onclick="closeNote()">✕</button>
+  </div>
+  <textarea id="note-ta" placeholder="Es: solo con RID, rinnovo automatico, offerta web..."></textarea>
+  <div class="flex-gap mt8" style="justify-content:flex-end">
+    <button class="btn btn-primary btn-sm" onclick="saveNote()">Salva</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  STORAGE MULTI-PROFILO
+//  Struttura: { profili: { "Enzo": {...S}, ... }, profiloAttivo: "Enzo" }
+// ══════════════════════════════════════
+const LS_KEY = 'energiaCasa3';
+const LS_PROFILI_KEY = 'energiaCasaProfili';
+
+// Componenti ARERA di default — aggiornate a Ottobre 2026
+// Fonte: bolletta Octopus Energy ottobre 2026, POD IT001E70383233, 4,5 kW, domestico residente
+// L_trasportoPotenza: quota potenza 1,960000 €/kW/mese + UC6 fisso 0,016567 €/kW/mese = 1,976567 €/kW/mese × 12 = 23,718804 €/kW/anno
+// L_trasportoVar: quota energia 0,011900 + UC3 0,002760 + UC6 var 0,000070 = 0,014730 €/kWh
+// L_oneri: ASOS 0,031515 + ARIM 0,001638 = 0,033153 €/kWh
+// L_accise: domestici residenti >3kW = 0,022700 €/kWh (nessuna franchigia)
+// L_cdispD: corrispettivo dispacciamento 0,014642 €/kWh
+function areraDefault(){
+  return {
+    // --- LUCE ---
+    L_trasportoFisso:   23.04,     // €/anno — quota fissa trasporto+contatore (1,92 €/mese × 12)
+    L_trasportoPotenza: 23.718804, // €/kW/anno — quota potenza + UC6 fisso (1,976567 €/kW/mese × 12)
+    L_potenzakW:        4.5,       // kW impegnati (da bolletta POD IT001E70383233)
+    L_trasportoVar:     0.014730,  // €/kWh — quota energia + UC3 + UC6 var
+    L_oneri:            0.033153,  // €/kWh — ASOS(0,031515)+ARIM(0,001638)
+    L_accise:           0.022700,  // €/kWh — domestici residenti >3kW (nessuna franchigia)
+    L_franchigia:       0,         // kWh/anno — 0 per potenza >3kW
+    L_residente:        false,     // false per >3kW (nessuna esenzione accise)
+    L_cdispD:           0.014642,  // €/kWh — corrispettivo dispacciamento (IVA 10%)
+    L_iva:              10,        // % IVA domestico
+    L_linkArera:        'https://www.arera.it/area-operatori/prezzi-e-tariffe',
+    // --- GAS ---
+    // Fonte: bolletta Octopus Energy ottobre 2026, ambito Bari (distributore Italgas)
+    // Quote fisse annue: COT 2,010 + DIS 38,100 + MIS 27,670 = 67,78 €/anno (rete, IVA 22%)
+    // Quote fisse oneri: UG2 -21,630 €/anno (IVA 22%) → inclusa in G_oneriFisso
+    // G_trasportoVar: QTV 0,132517 + QTt 0,105049 + RS 0,002788 + UG1 0,034837 = 0,275191 €/Smc
+    // G_oneri: RE 0,029417 + UG2var 0,049600 + UG3FT 0,006881 + UG3INT 0,000387 + UG3UI 0,000024 = 0,086309 €/Smc
+    G_trasportoFisso:   67.78,   // €/anno — COT+DIS+MIS quota fissa rete (IVA 22%)
+    G_oneriFisso:      -21.63,   // €/anno — UG2 quota fissa oneri (IVA 22%, negativa)
+    G_trasportoVar:     0.275191,// €/Smc — QTV+QTt+RS+UG1 (IVA 10%)
+    G_oneri:            0.086309,// €/Smc — RE+UG2var+UG3FT+UG3INT+UG3UI (IVA 10%)
+    G_pcs:              0.013143,// €/Smc — PCS potere calorifico superiore (IVA 10%)
+    G_accise:           0.135000,// €/Smc — imposta erariale
+    G_addRegionale:     0.030980,// €/Smc — addizionale regionale (Puglia ottobre 2026)
+    G_ivaBase:          10,      // % IVA su componenti variabili
+    G_ivaExtra:         22,      // % IVA oltre 480 Smc (non usata nel VB, solo motore offerte)
+    G_soglia:           480,     // Smc soglia IVA
+    G_linkArera:        'https://www.arera.it/area-operatori/prezzi-e-tariffe',
+    // --- META ---
+    dataAggiornamento:  '2026-10-01'
+  };
+}
+
+function statoDef(){
+  return {
+    imp: { kwh:0, smc:0, kwhManuale:0, smcManuale:0, usaStoricoKwh:true, usaStoricoSmc:true,
+           f1:0, f2:0, f3:0, mono:0, bi:0, psv:0 },
+    arera: areraDefault(),
+    operatori: [],
+    consumi: { luce:{}, gas:{} }
+  };
+}
+
+let _profili = {}; // { nome: statoDef }
+let _profiloAttivo = '';
+let S = statoDef();
+
+function loadProfili(){
+  try {
+    const raw = localStorage.getItem(LS_PROFILI_KEY);
+    if(raw){
+      const saved = JSON.parse(raw);
+      _profili = saved.profili || {};
+      _profiloAttivo = saved.profiloAttivo || '';
+    }
+  } catch(e){}
+
+  // Migrazione: se esiste vecchio LS_KEY e nessun profilo ancora
+  if(!Object.keys(_profili).length){
+    try {
+      const old = localStorage.getItem(LS_KEY);
+      if(old){
+        const d = JSON.parse(old);
+        let stato;
+        if(d.luce && (d.luce.contratto !== undefined || d.luce.consumi !== undefined)){
+          stato = migraVecchioFormato(d);
+        } else if(d.imp && d.operatori && d.consumi){
+          stato = d;
+        }
+        if(stato){
+          _profili['Enzo'] = stato;
+          _profiloAttivo = 'Enzo';
+        }
+      }
+    } catch(e){}
+  }
+
+  // Se ancora nessun profilo, crea default
+  if(!Object.keys(_profili).length){
+    _profili['Profilo 1'] = statoDef();
+    _profiloAttivo = 'Profilo 1';
+  }
+  if(!_profili[_profiloAttivo]){
+    _profiloAttivo = Object.keys(_profili)[0];
+  }
+
+  S = _profili[_profiloAttivo];
+
+  // Migrazione: aggiungi S.arera ai profili che non ce l'hanno
+  Object.values(_profili).forEach(p=>{ if(!p.arera) p.arera=areraDefault(); });
+  // Migrazione: aggiorna parametri ARERA se obsoleti (< dataAggiornamento corrente)
+  const _areraDef = areraDefault();
+  Object.values(_profili).forEach(p=>{
+    if(!p.arera) return;
+    const salvata = p.arera.dataAggiornamento || '2000-01-01';
+    if(salvata < _areraDef.dataAggiornamento){
+      // Aggiorna tutti i parametri ARERA (luce e gas)
+      ['L_trasportoFisso','L_trasportoPotenza','L_potenzakW','L_trasportoVar','L_oneri',
+       'L_accise','L_franchigia','L_residente','L_cdispD',
+       'G_trasportoFisso','G_oneriFisso','G_trasportoVar','G_oneri','G_pcs','G_accise',
+       'G_addRegionale','G_ivaBase','G_ivaExtra','G_soglia','G_linkArera','dataAggiornamento'
+      ].forEach(k=>{ p.arera[k]=_areraDef[k]; });
+    }
+  });
+  // Migrazione: aggiungi scadenza agli operatori che non ce l'hanno
+  Object.values(_profili).forEach(p=>{
+    (p.operatori||[]).forEach(op=>{ if(op.scadenza===undefined) op.scadenza=''; });
+  });
+  // Migrazione: scPromo/scRid → sconto struct
+  Object.values(_profili).forEach(p=>{
+    (p.operatori||[]).forEach(op=>{
+      (op.righe||[]).forEach(r=>{
+        if(!r.sconto) r.sconto={tipo:'',valore:0,durata:0};
+        if('scPromo' in r) delete r.scPromo;
+        if('scRid' in r) delete r.scRid;
+      });
+    });
+  });
+}
+
+function saveProfili(){
+  _profili[_profiloAttivo] = S;
+  try {
+    localStorage.setItem(LS_PROFILI_KEY, JSON.stringify({ profili: _profili, profiloAttivo: _profiloAttivo }));
+  } catch(e){}
+}
+
+function saveState(){ saveProfili(); }
+
+// Alias per compatibilità
+function loadState(){ loadProfili(); }
+
+// ══════════════════════════════════════
+//  GESTIONE PROFILI UI
+// ══════════════════════════════════════
+function renderProfiloSelect(){
+  const sel = document.getElementById('profilo-select');
+  sel.innerHTML = Object.keys(_profili).map(n =>
+    `<option value="${esc(n)}" ${n===_profiloAttivo?'selected':''}>${esc(n)}</option>`
+  ).join('');
+}
+
+function switchProfilo(nome){
+  if(nome === _profiloAttivo) return;
+  _profili[_profiloAttivo] = S; // salva corrente
+  _profiloAttivo = nome;
+  S = _profili[nome];
+  saveProfili();
+  renderAll();
+  renderProfiloSelect();
+}
+
+let _modalMode = ''; // 'nuovo' | 'rinomina'
+function nuovoProfilo(){
+  _modalMode = 'nuovo';
+  document.getElementById('modal-title').textContent = 'Nuovo profilo';
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-profilo').classList.add('open');
+  document.getElementById('modal-input').focus();
+}
+function rinominaProfilo(){
+  _modalMode = 'rinomina';
+  document.getElementById('modal-title').textContent = 'Rinomina profilo';
+  document.getElementById('modal-input').value = _profiloAttivo;
+  document.getElementById('modal-profilo').classList.add('open');
+  document.getElementById('modal-input').focus();
+}
+function closeModal(){
+  document.getElementById('modal-profilo').classList.remove('open');
+}
+function confermaModal(){
+  const nome = document.getElementById('modal-input').value.trim();
+  if(!nome){ alert('Inserisci un nome.'); return; }
+  if(_modalMode === 'nuovo'){
+    if(_profili[nome]){ alert('Esiste già un profilo con questo nome.'); return; }
+    _profili[nome] = statoDef();
+    _profili[_profiloAttivo] = S;
+    _profiloAttivo = nome;
+    S = _profili[nome];
+  } else {
+    if(nome !== _profiloAttivo && _profili[nome]){ alert('Esiste già un profilo con questo nome.'); return; }
+    _profili[nome] = S;
+    if(nome !== _profiloAttivo) delete _profili[_profiloAttivo];
+    _profiloAttivo = nome;
+  }
+  saveProfili();
+  renderProfiloSelect();
+  renderAll();
+  closeModal();
+}
+document.getElementById('modal-input').addEventListener('keydown', e => {
+  if(e.key === 'Enter') confermaModal();
+  if(e.key === 'Escape') closeModal();
+});
+document.getElementById('modal-profilo').addEventListener('click', e => {
+  if(e.target === document.getElementById('modal-profilo')) closeModal();
+});
+
+function eliminaProfilo(){
+  const nomi = Object.keys(_profili);
+  if(nomi.length <= 1){ alert('Non puoi eliminare l\'unico profilo.'); return; }
+  if(!confirm(`Eliminare il profilo "${_profiloAttivo}"? I dati saranno persi.`)) return;
+  delete _profili[_profiloAttivo];
+  _profiloAttivo = Object.keys(_profili)[0];
+  S = _profili[_profiloAttivo];
+  saveProfili();
+  renderProfiloSelect();
+  renderAll();
+}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function nowYM(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function last12(){
+  // ultimi 12 mesi CONCLUSI: da mese_corrente-12 a mese_corrente-1
+  const res=[],d=new Date();
+  for(let i=12;i>=1;i--){
+    const dd=new Date(d.getFullYear(),d.getMonth()-i,1);
+    res.push(dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0'));
+  }
+  return res;
+}
+function fmtM(ym){
+  const [y,m]=ym.split('-');
+  return ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][+m-1]+' '+y.slice(2);
+}
+function fmtEur(v){ return v!=null&&!isNaN(v)?parseFloat(v).toFixed(2).replace('.',',')+' €':'—'; }
+function fmtP(v){ if(v===null||v===undefined||v==='') return ''; const f=parseFloat(v); if(isNaN(f)) return ''; if(f===0) return '0,00000'; return f.toFixed(5).replace('.',','); }
+function n(v){ return parseFloat(v)||0; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════
+//  MIGRAZIONE VECCHIO FORMATO
+// ══════════════════════════════════════
+function migraVecchioFormato(old){
+  const S2 = {
+    imp:{ kwh:0, smc:0, kwhManuale:0, smcManuale:0, usaStoricoKwh:true, usaStoricoSmc:true,
+          f1:0, f2:0, f3:0, mono:0, bi:0, psv:0 },
+    operatori:[],
+    consumi:{ luce:{}, gas:{} }
+  };
+  if(old.luce?.consumi) S2.consumi.luce = old.luce.consumi;
+  if(old.gas?.consumi)  S2.consumi.gas  = old.gas.consumi;
+  const mapOp = {};
+  function addRigaDaContratto(contratto, tipo){
+    if(!contratto) return;
+    const nome = contratto.operatore || contratto.nome || 'Contratto attuale';
+    if(!mapOp[nome]) mapOp[nome]={nome,scadenza:'',righe:[]};
+    mapOp[nome].righe.push({ tipo, tipoContratto:'', durata:contratto.durata||0,
+      prezzo:contratto.prezzo||0, quota:contratto.quota||0, spread:null, perdita:0,
+      penale:contratto.penale||0, penaleDec:!!contratto.penaleDec, sconto:{tipo:'',valore:0,durata:0}, note:contratto.note||'' });
+  }
+  function addRigaDaOp(op, tipo){
+    const nome = op.nome||op.operatore||'Operatore';
+    if(!mapOp[nome]) mapOp[nome]={nome,scadenza:'',righe:[]};
+    if(!mapOp[nome].righe.find(r=>r.tipo===tipo)){
+      mapOp[nome].righe.push({ tipo, tipoContratto:'', durata:op.durata||0,
+        prezzo:op.prezzo||0, quota:op.quota||0, spread:null, perdita:0,
+        penale:op.penale||0, penaleDec:!!op.penaleDec, sconto:{tipo:'',valore:0,durata:0}, note:op.note||'' });
+    }
+  }
+  addRigaDaContratto(old.luce?.contratto,'luce');
+  addRigaDaContratto(old.gas?.contratto,'gas');
+  (old.luce?.operatori||[]).forEach(op=>addRigaDaOp(op,'luce'));
+  (old.gas?.operatori||[]).forEach(op=>addRigaDaOp(op,'gas'));
+  S2.operatori = Object.values(mapOp);
+  return S2;
+}
+
+// ══════════════════════════════════════
+//  CONSUMI EFFETTIVI
+// ══════════════════════════════════════
+function kwhDaStorico(){
+  return last12().reduce((s,m)=>s+n(S.consumi.luce[m]?.cons),0);
+}
+function smcDaStorico(){
+  return last12().reduce((s,m)=>s+n(S.consumi.gas[m]?.cons),0);
+}
+function kwhEffettivo(){
+  const ks=kwhDaStorico();
+  if(S.imp.usaStoricoKwh && ks>0) return ks;
+  return n(S.imp.kwhManuale)||n(S.imp.kwh);
+}
+function smcEffettivo(){
+  const ss=smcDaStorico();
+  if(S.imp.usaStoricoSmc && ss>0) return ss;
+  return n(S.imp.smcManuale)||n(S.imp.smc);
+}
+
+// ══════════════════════════════════════
+//  IMPOSTAZIONI
+// ══════════════════════════════════════
+function _setImpBtns(editing){
+  document.getElementById('btn-modifica').classList.toggle('hidden', editing);
+  document.getElementById('btn-salva-imp').classList.toggle('hidden', !editing);
+  document.getElementById('btn-annulla-imp').classList.toggle('hidden', !editing);
+}
+function annullaImp(){
+  document.getElementById('imp-form').classList.add('hidden');
+  _setImpBtns(false);
+}
+function toggleImp(){
+  const f=document.getElementById('imp-form');
+  if(f.classList.contains('hidden')){
+    const im=S.imp;
+    document.getElementById('i-kwh').value  = im.kwhManuale||im.kwh||'';
+    document.getElementById('i-smc').value  = im.smcManuale||im.smc||'';
+    document.getElementById('i-f1').value   = im.f1||'';
+    document.getElementById('i-f2').value   = im.f2||'';
+    document.getElementById('i-f3').value   = im.f3||'';
+    document.getElementById('i-mono').value = im.mono||'';
+    document.getElementById('i-bi').value   = im.bi||'';
+    document.getElementById('i-psv').value  = im.psv||'';
+    aggiornaStoricoInForm();
+    document.getElementById('src-kwh-'+(im.usaStoricoKwh?'storico':'manuale')).checked=true;
+    document.getElementById('src-smc-'+(im.usaStoricoSmc?'storico':'manuale')).checked=true;
+    // Popola campi ARERA
+    const a = S.arera || areraDefault();
+    const aFields = ['L_trasportoFisso','L_trasportoPotenza','L_potenzakW','L_trasportoVar',
+      'L_oneri','L_accise','L_franchigia','L_cdispD','L_iva','L_linkArera',
+      'G_trasportoFisso','G_trasportoVar','G_oneri','G_pcs','G_accise','G_addRegionale',
+      'G_ivaBase','G_ivaExtra','G_soglia','G_linkArera','dataAggiornamento'];
+    aFields.forEach(k=>{
+      const el=document.getElementById('a-'+k);
+      if(!el) return;
+      if(el.type==='checkbox') el.checked=!!a[k];
+      else el.value=a[k]??'';
+    });
+    document.getElementById('a-L_residente').checked=!!a.L_residente;
+    // Apri automaticamente il pannello ARERA
+    const det = f.querySelector('details');
+    if(det) det.open = true;
+    f.classList.remove('hidden');
+    // Mostra warning se potenza non standard
+    const elKw = document.getElementById('a-L_potenzakW');
+    if(elKw) checkPotenzakW(elKw);
+    _setImpBtns(true);
+  } else {
+    saveImp();
+  }
+}
+function aggiornaStoricoInForm(){
+  const ks=kwhDaStorico(), ss=smcDaStorico();
+  const elK=document.getElementById('imp-kwh-storico');
+  const elS=document.getElementById('imp-smc-storico');
+  if(elK){
+    if(ks>0) elK.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--luce)">${ks.toLocaleString('it')} kWh <span style="font-size:11px;font-weight:400;color:var(--muted)">(da storico)</span></div>`;
+    else elK.innerHTML=`<div class="text-muted" style="font-size:12px">Nessun dato nello storico</div>`;
+    const rS=document.getElementById('src-kwh-storico');
+    if(rS){ rS.disabled=ks<=0; if(ks<=0&&rS.checked){ document.getElementById('src-kwh-manuale').checked=true; } }
+  }
+  if(elS){
+    if(ss>0) elS.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--gas)">${ss.toLocaleString('it')} Smc <span style="font-size:11px;font-weight:400;color:var(--muted)">(da storico)</span></div>`;
+    else elS.innerHTML=`<div class="text-muted" style="font-size:12px">Nessun dato nello storico</div>`;
+    const rS=document.getElementById('src-smc-storico');
+    if(rS){ rS.disabled=ss<=0; if(ss<=0&&rS.checked){ document.getElementById('src-smc-manuale').checked=true; } }
+  }
+}
+function aggiornaSrcKwh(){
+  const v=document.querySelector('input[name="src-kwh"]:checked')?.value;
+  S.imp.usaStoricoKwh=(v==='storico');
+}
+function aggiornaSrcSmc(){
+  const v=document.querySelector('input[name="src-smc"]:checked')?.value;
+  S.imp.usaStoricoSmc=(v==='storico');
+}
+function setSrcKwh(v){
+  S.imp.usaStoricoKwh=(v==='storico');
+  if(v==='storico') S.imp.kwhManuale=0;
+  saveState(); refreshRisultati();
+}
+function setSrcSmc(v){
+  S.imp.usaStoricoSmc=(v==='storico');
+  if(v==='storico') S.imp.smcManuale=0;
+  saveState(); refreshRisultati();
+}
+function consBoxEdit(spanEl, key){
+  if(spanEl.querySelector('input')) return;
+  const im=S.imp;
+  const curVal=im[key]>0?im[key]:'';
+  const isKwh=(key==='kwhManuale');
+  const colore=isKwh?'var(--luce,#4a90d9)':'var(--gas,#e67e22)';
+  const unit=isKwh?'kWh':'Smc';
+  const origHTML=spanEl.outerHTML;
+  const inp=document.createElement('input');
+  inp.type='number'; inp.step='1'; inp.value=curVal;
+  inp.style.cssText=`width:70px;font-size:12px;font-weight:600;border:none;border-bottom:2px solid ${colore};background:transparent;outline:none;padding:1px 0;color:${colore}`;
+  spanEl.replaceWith(inp);
+  inp.focus(); inp.select();
+  const commit=()=>{
+    const v=parseFloat(inp.value)||0;
+    im[key]=v;
+    saveState(); refreshRisultati(); renderImpView();
+  };
+  const cancel=()=>{ renderImpView(); };
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+    if(e.key==='Escape'){ cancel(); }
+  });
+  inp.addEventListener('blur',()=>{ setTimeout(()=>{ if(document.body.contains(inp)) commit(); },150); });
+}
+function saveImp(){
+  const im=S.imp;
+  im.kwhManuale = parseFloat(document.getElementById('i-kwh').value)||0;
+  im.smcManuale = parseFloat(document.getElementById('i-smc').value)||0;
+  im.kwh = im.kwhManuale;
+  im.smc = im.smcManuale;
+  im.usaStoricoKwh = document.getElementById('src-kwh-storico')?.checked ?? true;
+  im.usaStoricoSmc = document.getElementById('src-smc-storico')?.checked ?? true;
+  const _punPre={f1:im.f1,f2:im.f2,f3:im.f3,mono:im.mono,bi:im.bi,psv:im.psv};
+  im.f1   = parseFloat(document.getElementById('i-f1').value)||0;
+  im.f2   = parseFloat(document.getElementById('i-f2').value)||0;
+  im.f3   = parseFloat(document.getElementById('i-f3').value)||0;
+  im.mono = parseFloat(document.getElementById('i-mono').value)||0;
+  im.bi   = parseFloat(document.getElementById('i-bi').value)||0;
+  im.psv  = parseFloat(document.getElementById('i-psv').value)||0;
+  // Registra data salvataggio PUN/PSV solo se i valori sono cambiati
+  const _punCambiato=_punPre.f1!==im.f1||_punPre.f2!==im.f2||_punPre.f3!==im.f3||_punPre.mono!==im.mono||_punPre.bi!==im.bi||_punPre.psv!==im.psv;
+  if(_punCambiato&&(im.f1||im.f2||im.f3||im.mono||im.bi||im.psv)) im.punSavedAt = new Date().toISOString();
+  // Leggi campi ARERA
+  const a = S.arera || areraDefault();
+  const numFields=['L_trasportoFisso','L_trasportoPotenza','L_potenzakW','L_trasportoVar',
+    'L_oneri','L_accise','L_franchigia','L_cdispD','L_iva',
+    'G_trasportoFisso','G_trasportoVar','G_oneri','G_pcs','G_accise','G_addRegionale',
+    'G_ivaBase','G_ivaExtra','G_soglia'];
+  numFields.forEach(k=>{ const el=document.getElementById('a-'+k); if(el) a[k]=parseFloat(el.value)||0; });
+  a.L_residente = document.getElementById('a-L_residente')?.checked ?? true;
+  a.L_linkArera = document.getElementById('a-L_linkArera')?.value.trim() || a.L_linkArera;
+  a.G_linkArera = document.getElementById('a-G_linkArera')?.value.trim() || a.G_linkArera;
+  a.dataAggiornamento = document.getElementById('a-dataAggiornamento')?.value || a.dataAggiornamento;
+  S.arera = a;
+  saveState();
+  document.getElementById('imp-form').classList.add('hidden');
+  _setImpBtns(false);
+  renderImpView();
+  refreshRisultati();
+}
+function checkPotenzakW(inp){
+  const v=parseFloat(inp.value);
+  const warn=document.getElementById('warn-potenza');
+  const standard=(isNaN(v)||v===3||v===4.5);
+  if(warn) warn.style.display=standard?'none':'block';
+  if(!standard){
+    const ok=confirm('⚠️ Il sistema di calcolo è tarato per contatori da 3 kW o 4,5 kW.\n\nCon un valore diverso i parametri ARERA (trasporto potenza, oneri, franchigia) potrebbero non essere corretti.\n\nUsa i pulsanti "3 kW" o "4,5 kW" per applicare automaticamente tutti i valori ARERA corretti.\n\nVuoi comunque continuare con ' + (isNaN(v)?'questo valore':v+' kW') + '?');
+    if(!ok){ inp.value=S.arera?S.arera.L_potenzakW:3; if(warn) warn.style.display='none'; }
+  }
+}
+function applicaPresetKw(kw){
+  const a=S.arera||(S.arera=areraDefault());
+  if(kw===3){
+    a.L_potenzakW=3; a.L_trasportoPotenza=23.52; a.L_trasportoFisso=23.04;
+    a.L_trasportoVar=0.01204; a.L_oneri=0.0303; a.L_accise=0.0227;
+    a.L_franchigia=1800; a.L_residente=true; a.L_cdispD=0; a.L_iva=10;
+  } else if(kw===4.5){
+    // Da bolletta Octopus ottobre 2026, POD IT001E70383233
+    // L_trasportoPotenza: (1,960000 + 0,016567 UC6 fisso) €/kW/mese × 12 = 23,718804 €/kW/anno
+    a.L_potenzakW=4.5; a.L_trasportoPotenza=23.718804; a.L_trasportoFisso=23.04;
+    a.L_trasportoVar=0.014730; a.L_oneri=0.033153; a.L_accise=0.022700;
+    a.L_franchigia=0; a.L_residente=false; a.L_cdispD=0.014642; a.L_iva=10;
+  }
+  // Aggiorna i campi visibili nel form
+  const flds=['L_trasportoFisso','L_trasportoPotenza','L_potenzakW','L_trasportoVar',
+    'L_oneri','L_accise','L_franchigia','L_cdispD','L_iva'];
+  flds.forEach(k=>{ const el=document.getElementById('a-'+k); if(el) el.value=a[k]??''; });
+  const elR=document.getElementById('a-L_residente'); if(elR) elR.checked=!!a.L_residente;
+  const warn=document.getElementById('warn-potenza'); if(warn) warn.style.display='none';
+  saveState(); refreshRisultati();
+}
+function ripristinaArera(){
+  if(!confirm('Ripristinare i valori ARERA di default (Ott 2026)?')) return;
+  S.arera = areraDefault();
+  // Aggiorna i campi nel form
+  const a=S.arera;
+  const aFields=['L_trasportoFisso','L_trasportoPotenza','L_potenzakW','L_trasportoVar',
+    'L_oneri','L_accise','L_franchigia','L_cdispD','L_iva','L_linkArera',
+    'G_trasportoFisso','G_trasportoVar','G_oneri','G_pcs','G_accise','G_addRegionale',
+    'G_ivaBase','G_ivaExtra','G_soglia','G_linkArera','dataAggiornamento'];
+  aFields.forEach(k=>{ const el=document.getElementById('a-'+k); if(el){ if(el.type==='checkbox') el.checked=!!a[k]; else el.value=a[k]??''; } });
+  document.getElementById('a-L_residente').checked=!!a.L_residente;
+  saveState(); refreshRisultati();
+}
+function punDataAge(im){
+  // Restituisce {giorni, label, colore, cssBox} in base a im.punSavedAt
+  if(!im.punSavedAt) return null;
+  const giorni = Math.floor((Date.now()-new Date(im.punSavedAt).getTime())/(1000*60*60*24));
+  if(giorni<=30) return {giorni, label:'aggiornato '+new Date(im.punSavedAt).toLocaleDateString('it'), colore:'var(--green)', cssBox:'border:1.5px solid var(--green)'};
+  if(giorni<=60) return {giorni, label:'⚠️ dati del mese scorso ('+new Date(im.punSavedAt).toLocaleDateString('it')+')', colore:'#e67e22', cssBox:'border:1.5px solid #e67e22'};
+  return {giorni, label:'⚠️ dati di '+new Date(im.punSavedAt).toLocaleDateString('it'), colore:'#e53e3e', cssBox:'border:1.5px solid #e53e3e'};
+}
+function renderPunBanner(){
+  const im=S.imp;
+  const bannerEl=document.getElementById('pun-stale-banner');
+  if(!bannerEl) return;
+  const hasPun=im.f1||im.f2||im.f3||im.mono||im.bi||im.psv;
+  if(!hasPun||!im.punSavedAt){ bannerEl.style.display='none'; return; }
+  const age=punDataAge(im);
+  if(!age||age.giorni<=30){ bannerEl.style.display='none'; return; }
+  bannerEl.style.display='flex';
+  bannerEl.style.background= age.giorni<=60 ? '#fff8e1' : '#fff0f0';
+  bannerEl.style.borderLeft = '4px solid '+(age.giorni<=60?'#e67e22':'#e53e3e');
+  bannerEl.innerHTML=`<span style="font-size:13px;font-weight:700;color:${age.giorni<=60?'#e67e22':'#e53e3e'}">
+    ${age.giorni<=60?'⚠️':'🔴'} PUN/PSV non aggiornati da ${age.giorni} giorni
+    </span><span style="font-size:12px;color:var(--muted);margin-left:8px">(salvati il ${new Date(im.punSavedAt).toLocaleDateString('it')})</span>
+    <button class="btn btn-neutral btn-sm" onclick="document.getElementById('btn-edit-imp').click()" style="margin-left:12px;font-size:11px;padding:2px 10px">Aggiorna ora</button>`;
+}
+function renderConsView(){
+  const el=document.getElementById('cons-view');
+  if(!el) return;
+  const im=S.imp;
+  const ks=kwhDaStorico(), ss=smcDaStorico();
+  const usaKwh=im.usaStoricoKwh&&ks>0, usaSmc=im.usaStoricoSmc&&ss>0;
+  const btnStyle=(active,colore)=>`flex:1;font-size:10px;padding:3px 6px;border-radius:4px;border:none;cursor:pointer;font-weight:700;${active?`background:${colore};color:#fff`:'background:var(--bg-muted,#eee);color:var(--muted)'}`;
+  el.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div style="background:var(--bg);border:1.5px solid var(--luce,#4a90d9);border-radius:8px;padding:10px 12px;min-width:160px;flex:1">
+      <div style="font-size:11px;font-weight:700;color:var(--luce,#4a90d9);margin-bottom:6px">⚡ kWh/anno</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <button onclick="setSrcKwh('storico');renderImpView()" style="${btnStyle(usaKwh,'var(--luce,#4a90d9)')}">📊 Storico</button>
+        <button onclick="setSrcKwh('manuale');renderImpView()" style="${btnStyle(!usaKwh,'var(--luce,#4a90d9)')}">✏️ Manuale</button>
+      </div>
+      ${ks>0?`<div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">storico</span><span style="font-weight:600;color:${usaKwh?'var(--luce,#4a90d9)':'var(--muted)'}">${ks.toLocaleString('it')} kWh</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-bottom:4px">nessuno storico disponibile</div>'}
+      <div style="font-size:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--muted)">manuale</span>
+        ${!usaKwh
+          ? `<span onclick="consBoxEdit(this,'kwhManuale')" style="font-weight:600;color:var(--luce,#4a90d9);cursor:pointer;border-bottom:1px dashed var(--luce,#4a90d9)">${im.kwhManuale>0?im.kwhManuale.toLocaleString('it')+' kWh':'— tocca per inserire'}</span>`
+          : `<span style="color:var(--muted)">${im.kwhManuale>0?im.kwhManuale.toLocaleString('it')+' kWh':'—'}</span>`
+        }
+      </div>
+    </div>
+    <div style="background:var(--bg);border:1.5px solid var(--gas,#e67e22);border-radius:8px;padding:10px 12px;min-width:160px;flex:1">
+      <div style="font-size:11px;font-weight:700;color:var(--gas,#e67e22);margin-bottom:6px">🔥 Smc/anno</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <button onclick="setSrcSmc('storico');renderImpView()" style="${btnStyle(usaSmc,'var(--gas,#e67e22)')}">📊 Storico</button>
+        <button onclick="setSrcSmc('manuale');renderImpView()" style="${btnStyle(!usaSmc,'var(--gas,#e67e22)')}">✏️ Manuale</button>
+      </div>
+      ${ss>0?`<div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">storico</span><span style="font-weight:600;color:${usaSmc?'var(--gas,#e67e22)':'var(--muted)'}">${ss.toLocaleString('it')} Smc</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-bottom:4px">nessuno storico disponibile</div>'}
+      <div style="font-size:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--muted)">manuale</span>
+        ${!usaSmc
+          ? `<span onclick="consBoxEdit(this,'smcManuale')" style="font-weight:600;color:var(--gas,#e67e22);cursor:pointer;border-bottom:1px dashed var(--gas,#e67e22)">${im.smcManuale>0?im.smcManuale.toLocaleString('it')+' Smc':'— tocca per inserire'}</span>`
+          : `<span style="color:var(--muted)">${im.smcManuale>0?im.smcManuale.toLocaleString('it')+' Smc':'—'}</span>`
+        }
+      </div>
+    </div>
+  </div>`;
+}
+function renderImpView(){
+  const im=S.imp, el=document.getElementById('imp-view');
+  const kwh=kwhEffettivo(), smc=smcEffettivo();
+  const ks=kwhDaStorico(), ss=smcDaStorico();
+  renderPunBanner();
+  const srcKwh = im.usaStoricoKwh&&ks>0 ? ' <span style="font-size:10px;color:var(--muted)">(storico)</span>' : ' <span style="font-size:10px;color:var(--muted)">(manuale)</span>';
+  const srcSmc = im.usaStoricoSmc&&ss>0 ? ' <span style="font-size:10px;color:var(--muted)">(storico)</span>' : ' <span style="font-size:10px;color:var(--muted)">(manuale)</span>';
+  const age=punDataAge(im);
+  const punStyle=age ? age.cssBox : 'border:1.5px solid var(--border)';
+  const dataLabel=age ? `<div style="font-size:9px;color:${age.colore};margin-top:2px">${age.label}</div>` : '<div style="font-size:9px;color:var(--muted);margin-top:2px">clicca per modificare</div>';
+  const punBox=(key,label,val)=>`<div class="imp-box" style="${punStyle};cursor:pointer;transition:box-shadow .15s" title="Clicca per modificare" onclick="punBoxEdit(this,'${key}')">
+    <div class="imp-label">${label}</div>
+    <div class="imp-val" style="font-size:12px;font-weight:600">${val.toFixed(6)}</div>
+    ${dataLabel}
+  </div>`;
+  // Box per valori zero (non ancora inseriti) — mostra placeholder cliccabile
+  const punBoxEmpty=(key,label)=>`<div class="imp-box" style="border:1.5px dashed var(--border);cursor:pointer;opacity:.6" title="Clicca per inserire" onclick="punBoxEdit(this,'${key}')">
+    <div class="imp-label">${label}</div>
+    <div class="imp-val" style="font-size:12px;color:var(--muted)">— inserisci</div>
+  </div>`;
+  const hasPunFields = im.f1||im.f2||im.f3||im.mono||im.bi;
+  const punBoxes = [
+    (im.mono||!hasPunFields) ? (im.mono ? punBox('mono','PUN Monorario',im.mono) : punBoxEmpty('mono','PUN Monorario')) : '',
+    (im.f1||hasPunFields)    ? (im.f1   ? punBox('f1','PUN F1 picco',im.f1)       : punBoxEmpty('f1','PUN F1 picco'))    : '',
+    (im.f2||hasPunFields)    ? (im.f2   ? punBox('f2','PUN F2 intermedio',im.f2)  : punBoxEmpty('f2','PUN F2 interm.'))  : '',
+    (im.f3||hasPunFields)    ? (im.f3   ? punBox('f3','PUN F3 fuori picco',im.f3) : punBoxEmpty('f3','PUN F3 fuori pc')) : '',
+  ].join('');
+  const usaKwh=im.usaStoricoKwh&&ks>0;
+  const usaSmc=im.usaStoricoSmc&&ss>0;
+  const a=S.arera||areraDefault();
+  const linkL=a.L_linkArera||'';
+  const linkG=a.G_linkArera||'';
+  el.innerHTML=`<div class="imp-grid">
+    <div class="imp-box">
+      <div class="imp-label">⚡ kWh/anno</div>
+      <div class="imp-val luce">${kwh?kwh.toLocaleString('it'):'—'}</div>
+      <div style="display:flex;gap:3px;margin-top:5px">
+        <button onclick="setSrcKwh('storico');renderImpView()" style="flex:1;font-size:9px;padding:2px 4px;border-radius:4px;border:none;cursor:pointer;font-weight:700;${usaKwh?'background:var(--luce,#4a90d9);color:#fff':'background:var(--bg-muted,#eee);color:var(--muted)'}">📊 Storico</button>
+        <button onclick="setSrcKwh('manuale');renderImpView()" style="flex:1;font-size:9px;padding:2px 4px;border-radius:4px;border:none;cursor:pointer;font-weight:700;${!usaKwh?'background:var(--luce,#4a90d9);color:#fff':'background:var(--bg-muted,#eee);color:var(--muted)'}">✏️ Manuale</button>
+      </div>
+      ${!usaKwh?`<div style="font-size:11px;margin-top:4px;color:var(--luce,#4a90d9);cursor:pointer;border-bottom:1px dashed var(--luce,#4a90d9);display:inline-block" onclick="consBoxEdit(this,'kwhManuale')">${im.kwhManuale>0?im.kwhManuale.toLocaleString('it')+' kWh':'— inserisci'}</div>`:''}
+    </div>
+    <div class="imp-box">
+      <div class="imp-label">🔥 Smc/anno</div>
+      <div class="imp-val gas">${smc?smc.toLocaleString('it'):'—'}</div>
+      <div style="display:flex;gap:3px;margin-top:5px">
+        <button onclick="setSrcSmc('storico');renderImpView()" style="flex:1;font-size:9px;padding:2px 4px;border-radius:4px;border:none;cursor:pointer;font-weight:700;${usaSmc?'background:var(--gas,#e67e22);color:#fff':'background:var(--bg-muted,#eee);color:var(--muted)'}">📊 Storico</button>
+        <button onclick="setSrcSmc('manuale');renderImpView()" style="flex:1;font-size:9px;padding:2px 4px;border-radius:4px;border:none;cursor:pointer;font-weight:700;${!usaSmc?'background:var(--gas,#e67e22);color:#fff':'background:var(--bg-muted,#eee);color:var(--muted)'}">✏️ Manuale</button>
+      </div>
+      ${!usaSmc?`<div style="font-size:11px;margin-top:4px;color:var(--gas,#e67e22);cursor:pointer;border-bottom:1px dashed var(--gas,#e67e22);display:inline-block" onclick="consBoxEdit(this,'smcManuale')">${im.smcManuale>0?im.smcManuale.toLocaleString('it')+' Smc':'— inserisci'}</div>`:''}
+    </div>
+    ${punBoxes}
+    ${(im.psv||true) ? (im.psv ? punBox('psv','PSV vigente',im.psv) : punBoxEmpty('psv','PSV vigente')) : ''}
+    <div class="imp-box"><div class="imp-label">🏛️ Componenti ARERA</div><div style="font-size:12px">${linkL?`<a href="${esc(linkL)}" target="_blank" rel="noopener" style="color:var(--purple)">Fonte: ARERA</a>`:(linkG?`<a href="${esc(linkG)}" target="_blank" rel="noopener" style="color:var(--purple)">Fonte: ARERA</a>`:'ARERA')}</div></div>
+  </div>`;
+}
+function punBoxEdit(boxEl, key){
+  // Evita doppio edit
+  if(boxEl.querySelector('input')) return;
+  const im=S.imp;
+  const curVal=(im[key]||0).toFixed(6);
+  const origHTML=boxEl.innerHTML;
+  boxEl.innerHTML=`<div class="imp-label">${boxEl.querySelector('.imp-label')?.textContent||key}</div>
+    <input type="number" step="0.000001" value="${curVal}" style="width:100%;font-size:13px;font-weight:600;border:none;border-bottom:2px solid var(--purple);background:transparent;outline:none;padding:2px 0;margin-top:2px" id="pun-inline-${key}">
+    <div style="font-size:9px;color:var(--muted);margin-top:3px">Invio per salvare · Esc per annullare</div>`;
+  const inp=boxEl.querySelector('input');
+  inp.focus(); inp.select();
+  const commit=()=>{
+    const v=parseFloat(inp.value)||0;
+    im[key]=v;
+    if(im.f1||im.f2||im.f3||im.mono||im.bi||im.psv) im.punSavedAt=new Date().toISOString();
+    // Sincronizza anche il campo nascosto nelle impostazioni
+    const hidden=document.getElementById('i-'+key);
+    if(hidden) hidden.value=v||'';
+    saveState();
+    refreshRisultati();
+    renderImpView();
+  };
+  const cancel=()=>{ boxEl.innerHTML=origHTML; };
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+    if(e.key==='Escape'){ cancel(); }
+  });
+  inp.addEventListener('blur',()=>{ setTimeout(()=>{ if(boxEl.querySelector('input')) commit(); },150); });
+}
+
+// ══════════════════════════════════════
+//  VALIDAZIONE
+// ══════════════════════════════════════
+const LIMITI = {
+  prezzo:  { max:0.5,  msg:'€/kWh alto (>0.50): è espresso in centesimi? (es. 9.9 ct = 0.099 €)' },
+  prezzoG: { max:1.5,  msg:'€/Smc alto (>1.50): controlla il valore.' },
+  quota:   { max:20,   msg:'quota' },
+  spread:  { max:0.1,  msg:'Spread alto (>0.10): verifica il valore.' },
+  penale:  { max:200,  msg:'Penale alta (>200€): conferma il valore.' },
+  durata:  { max:36,   msg:'Durata >36 mesi: contratto molto lungo, confermi?' },
+  perdita: { max:5,    msg:'Perdita rete >5%: valore insolito, controlla.' }
+};
+let _tipTimer=null;
+function showTip(inp,msg){
+  let tip=inp._tip;
+  if(!tip){ tip=document.createElement('div');
+    tip.style.cssText='position:fixed;background:#1a1d23;color:#fff;padding:4px 9px;border-radius:5px;font-size:11px;z-index:9999;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(tip); inp._tip=tip; }
+  const r=inp.getBoundingClientRect();
+  tip.textContent=msg; tip.style.display='block';
+  tip.style.top=(r.bottom+4)+'px'; tip.style.left=r.left+'px';
+  clearTimeout(_tipTimer); _tipTimer=setTimeout(()=>tip.style.display='none',3500);
+}
+
+// ══════════════════════════════════════
+//  CALCOLO + DETTAGLIO
+// ══════════════════════════════════════
+// Calcola le componenti ARERA aggiuntive (uguali per tutti gli operatori)
+function calcolaArera(tipo, cons){
+  const a = S.arera || areraDefault();
+  if(tipo === 'luce'){
+    const kW = a.L_potenzakW || 3;
+    const trasporto = a.L_trasportoFisso + a.L_trasportoPotenza * kW + a.L_trasportoVar * cons;
+    const oneri = a.L_oneri * cons;
+    const cdispd = (a.L_cdispD || 0) * cons; // corrispettivo dispacciamento (0 per 3kW; non zero per 4.5kW)
+    // Accise: esenzione per residenti ≤3kW
+    let baseAccise = cons;
+    if(a.L_residente && kW <= 3) baseAccise = Math.max(0, cons - a.L_franchigia);
+    const accise = a.L_accise * baseAccise;
+    return { trasporto, oneri, cdispd, accise, addRegionale: 0 };
+  } else {
+    // trasporto = quota fissa rete + oneri fissi (UG2) + quota variabile
+    const trasporto = (a.G_trasportoFisso + (a.G_oneriFisso||0)) + a.G_trasportoVar * cons;
+    const pcs = (a.G_pcs||0) * cons;         // PCS: componente materia prima ARERA (IVA 10%)
+    const oneri = a.G_oneri * cons;
+    const accise = a.G_accise * cons;
+    const addRegionale = a.G_addRegionale * cons;
+    return { trasporto, pcs, oneri, accise, addRegionale };
+  }
+}
+// Calcola IVA su (materia + componenti ARERA) in base al tipo
+function calcolaIva(tipo, imponibile, cons){
+  const a = S.arera || areraDefault();
+  if(tipo === 'luce'){
+    return imponibile * (a.L_iva / 100);
+  } else {
+    const soglia = a.G_soglia || 480;
+    if(cons <= soglia){
+      return imponibile * (a.G_ivaBase / 100);
+    } else {
+      // Quota fino a soglia: IVA base; quota eccedente: IVA extra
+      const percBase = soglia / cons;
+      return imponibile * (percBase * a.G_ivaBase/100 + (1-percBase) * a.G_ivaExtra/100);
+    }
+  }
+}
+
+// Restituisce { materia, totale } oppure null se dati mancanti
+// materia = solo la parte operatore (utile per il ranking)
+// totale = materia + componenti ARERA (utile per stima bolletta reale)
+function calcolaRiga(r){
+  const im=S.imp;
+  const isL=r.tipo==='luce';
+  const prezzo=n(r.prezzo), quota=n(r.quota)*12, spread=n(r.spread);
+  const perd=n(r.perdita)/100;
+  let cons,pEff;
+  if(isL){
+    cons=kwhEffettivo(); if(!cons) return null;
+    if(prezzo>0){ pEff=prezzo; }
+    else if(r.spread!==null && r.prezzo===0){
+      const pun=im.mono||(im.f1&&im.f2&&im.f3?(im.f1*0.45+im.f2*0.35+im.f3*0.20):0);
+      if(!pun) return null; pEff=pun+spread;
+    } else return null;
+  } else {
+    cons=smcEffettivo(); if(!cons) return null;
+    if(prezzo>0){ pEff=prezzo; }
+    else if(r.spread!==null && r.prezzo===0){ if(!im.psv) return null; pEff=im.psv+spread; }
+    else return null;
+  }
+  const consEff = perd>0 ? cons*(1+perd) : cons;
+  const sc = calcolaSconto(r.sconto, consEff*pEff + quota, consEff*pEff, quota, r.tipo, consEff, im);
+  const materia = Math.max(0, consEff*pEff + quota - sc);
+  // Componenti ARERA
+  const comp = calcolaArera(r.tipo, consEff);
+  const imponibile = materia + (comp.pcs||0) + comp.trasporto + comp.oneri + (comp.cdispd||0) + comp.accise + (comp.addRegionale||0);
+  const iva = calcolaIva(r.tipo, imponibile, consEff);
+  const totale = imponibile + iva;
+  return { materia, totale };
+}
+
+// Restituisce oggetto con tutti i passaggi intermedi per il dettaglio
+function calcolaDettaglio(r){
+  const im=S.imp;
+  const isL=r.tipo==='luce';
+  const prezzo=n(r.prezzo), spread=n(r.spread);
+  const quota=n(r.quota), quotaAnno=quota*12;
+  const perd=n(r.perdita)/100;
+  const d = {
+    tipo: isL ? 'luce' : 'gas',
+    unit: isL ? 'kWh' : 'Smc',
+    consBase: isL ? kwhEffettivo() : smcEffettivo(),
+    srcCons: null,
+    perdPerc: n(r.perdita),
+    consEffettivo: 0,
+    pEff: 0,
+    prezzoFisso: prezzo > 0,
+    spread,
+    riferimento: 0,
+    rifNome: '',
+    quotaMese: quota,
+    quotaAnno,
+    sconto: r.sconto||{tipo:'',base:'',valore:0,durata:0},
+    scontoAnno: 0,
+    materiaEnergia: 0,
+    totale: null,
+    errore: null
+  };
+
+  if(!d.consBase){ d.errore = isL ? 'kWh non impostati' : 'Smc non impostati'; return d; }
+
+  // Fonte consumo
+  if(isL){
+    const ks=kwhDaStorico();
+    d.srcCons = (im.usaStoricoKwh && ks>0) ? 'storico 12 mesi' : 'manuale';
+  } else {
+    const ss=smcDaStorico();
+    d.srcCons = (im.usaStoricoSmc && ss>0) ? 'storico 12 mesi' : 'manuale';
+  }
+
+  // Prezzo unitario
+  if(prezzo > 0){
+    d.pEff = prezzo;
+  } else if(r.spread!==null && r.prezzo===0){
+    if(isL){
+      const pun=im.mono||(im.f1&&im.f2&&im.f3?(im.f1*0.45+im.f2*0.35+im.f3*0.20):0);
+      if(!pun){ d.errore='PUN non impostato'; return d; }
+      d.riferimento = pun;
+      d.rifNome = im.mono ? 'PUN mono' : 'PUN pond. (F1×0.45+F2×0.35+F3×0.20)';
+      d.pEff = pun + spread;
+    } else {
+      if(!im.psv){ d.errore='PSV non impostato'; return d; }
+      d.riferimento = im.psv;
+      d.rifNome = 'PSV';
+      d.pEff = im.psv + spread;
+    }
+  } else {
+    d.errore = 'Prezzo non inserito';
+    return d;
+  }
+
+  // Consumi con perdita
+  d.consEffettivo = perd > 0 ? d.consBase * (1 + perd) : d.consBase;
+  d.materiaEnergia = d.consEffettivo * d.pEff;
+  d.scontoAnno = calcolaSconto(d.sconto, d.materiaEnergia + d.quotaAnno, d.materiaEnergia, d.quotaAnno, d.tipo, d.consEffettivo, im);
+  d.materia = Math.max(0, d.materiaEnergia + d.quotaAnno - d.scontoAnno);
+
+  // Componenti ARERA
+  const comp = calcolaArera(d.tipo, d.consEffettivo);
+  d.trasporto    = comp.trasporto;
+  d.pcs          = comp.pcs || 0;
+  d.oneri        = comp.oneri;
+  d.cdispd       = comp.cdispd || 0;
+  d.accise       = comp.accise;
+  d.addRegionale = comp.addRegionale || 0;
+  const imponibile = d.materia + d.pcs + d.trasporto + d.oneri + d.cdispd + d.accise + d.addRegionale;
+  d.iva    = calcolaIva(d.tipo, imponibile, d.consEffettivo);
+  d.totale = imponibile + d.iva;
+  return d;
+}
+
+function htmlDettaglioRiga(r){
+  const d = calcolaDettaglio(r);
+  const isL = d.tipo === 'luce';
+  const color = isL ? 'luce' : 'gas';
+  const emoji = isL ? '⚡' : '🔥';
+
+  if(d.errore){
+    return `<div class="detail-block">
+      <h4 class="${color}">${emoji} ${isL?'Luce':'Gas'}</h4>
+      <div class="text-muted" style="font-size:12px">⚠️ ${d.errore}</div>
+    </div>`;
+  }
+
+  const righe = [];
+  righe.push({ l:`Consumo base (${d.srcCons})`, v:`${d.consBase.toLocaleString('it')} ${d.unit}` });
+  if(d.perdPerc > 0){
+    righe.push({ l:`+ Perdita rete (${d.perdPerc}%)`, v:`+${((d.consEffettivo-d.consBase)).toFixed(1)} ${d.unit}` });
+    righe.push({ l:`= Consumo fatturato`, v:`${d.consEffettivo.toFixed(1)} ${d.unit}` });
+  }
+  if(!d.prezzoFisso && d.spread > 0){
+    righe.push({ l:d.rifNome, v:`${d.riferimento.toFixed(6)} €/${d.unit}` });
+    righe.push({ l:`+ Spread`, v:`${d.spread.toFixed(6)} €/${d.unit}` });
+    righe.push({ l:`= Prezzo eff.`, v:`${d.pEff.toFixed(6)} €/${d.unit}` });
+  } else {
+    righe.push({ l:`Prezzo fisso`, v:`${d.pEff.toFixed(6)} €/${d.unit}` });
+  }
+  righe.push({ l:`Materia energia (cons×prezzo)`, v:`${fmtEur(d.materiaEnergia)}` });
+  if(d.quotaMese > 0) righe.push({ l:`+ Quota comm. (${d.quotaMese.toFixed(2).replace('.',',')} €/m × 12)`, v:`+${fmtEur(d.quotaAnno)}` });
+  if(d.scontoAnno > 0) righe.push({ l:`− Sconto (${labelSconto(d.sconto)})`, v:`−${fmtEur(d.scontoAnno)}` });
+
+  const aRighe = [];
+  if(!isL && d.pcs > 0) aRighe.push({ l:`PCS (pot. calorifico sup.)`, v:`+${fmtEur(d.pcs)}` });
+  aRighe.push({ l:`Trasporto e distribuzione`, v:`+${fmtEur(d.trasporto)}` });
+  aRighe.push({ l:`Oneri di sistema`, v:`+${fmtEur(d.oneri)}` });
+  if(isL && d.cdispd > 0) aRighe.push({ l:`Dispacciamento (CdispD)`, v:`+${fmtEur(d.cdispd)}` });
+  aRighe.push({ l:`Accise`, v:`+${fmtEur(d.accise)}` });
+  if(!isL && d.addRegionale > 0) aRighe.push({ l:`Addizionale regionale`, v:`+${fmtEur(d.addRegionale)}` });
+  const a = S.arera || areraDefault();
+  const ivaLabel = isL ? `IVA ${a.L_iva}%` : `IVA (${a.G_ivaBase}%/${a.G_ivaExtra}% oltre ${a.G_soglia} Smc)`;
+  aRighe.push({ l:ivaLabel, v:`+${fmtEur(d.iva)}` });
+
+  return `<div class="detail-block">
+    <h4 class="${color}">${emoji} ${isL?'Luce':'Gas'}</h4>
+    ${righe.map(x=>`<div class="detail-line"><span class="dl">${x.l}</span><span class="dv">${x.v}</span></div>`).join('')}
+    <div class="detail-line subtotal"><span class="dl">▶ Materia (costo operatore)</span><span class="dv">${fmtEur(d.materia)}</span></div>
+    <div style="font-size:11px;color:var(--muted);margin:6px 0 2px;padding-top:4px;border-top:1px dashed var(--border)">Componenti regolate ARERA (uguali per tutti)</div>
+    ${aRighe.map(x=>`<div class="detail-line"><span class="dl">${x.l}</span><span class="dv">${x.v}</span></div>`).join('')}
+    <div class="detail-line total"><span class="dl">Totale stimato annuo</span><span class="dv" style="color:${isL?'var(--luce)':'var(--gas)'}">${fmtEur(d.totale)}</span></div>
+  </div>`;
+}
+
+// ── SCONTO ──────────────────────────────
+let _scontoOi=-1, _scontoRi=-1;
+function calcolaSconto(sc, totOp, materia, quotaAnno, tipo, cons, im){
+  if(!sc||!sc.tipo||!sc.valore) return 0;
+  const v=n(sc.valore);
+  const dur=n(sc.durata); // 0=tutta durata
+  const mesi = dur>0 ? dur : 12;
+  const fraz = mesi/12;
+  if(sc.tipo==='eur-mese') return v*mesi;
+  if(sc.tipo==='eur-anno') return v*fraz;
+  if(sc.tipo==='pct-fissi') return (quotaAnno)*v/100*fraz;
+  if(sc.tipo==='pct-materia') return materia*v/100*fraz;
+  if(sc.tipo==='pct-totale') return totOp*v/100*fraz;
+  return 0;
+}
+function labelSconto(sc){
+  if(!sc||!sc.tipo||!sc.valore) return '—';
+  const v=n(sc.valore);
+  const dur=n(sc.durata);
+  const durStr=dur>0?` × ${dur}m`:'';
+  if(sc.tipo==='eur-mese') return `${v}€/m${durStr}`;
+  if(sc.tipo==='eur-anno') return `${v}€/a`;
+  if(sc.tipo==='pct-fissi') return `${v}% fissi${durStr}`;
+  if(sc.tipo==='pct-materia') return `${v}% materia${durStr}`;
+  if(sc.tipo==='pct-totale') return `${v}% tot.${durStr}`;
+  return '—';
+}
+function badgeSconto(sc){
+  if(!sc||!sc.tipo||!sc.valore) return `<span style="color:var(--muted);font-size:12px">✏️ imposta</span>`;
+  return `<span style="font-size:11px;font-weight:700;color:var(--green)">✂️ ${labelSconto(sc)}</span>`;
+}
+function apriPopupSconto(oi,ri){
+  _scontoOi=oi; _scontoRi=ri;
+  const sc=(S.operatori[oi]?.righe[ri]?.sconto)||{tipo:'',valore:0,durata:0};
+  document.getElementById('sc-tipo').value=sc.tipo||'';
+  document.getElementById('sc-valore').value=sc.valore||'';
+  document.getElementById('sc-durata').value=sc.durata||'';
+  scOnChange();
+  document.getElementById('sconto-overlay').classList.remove('hidden');
+}
+function chiudiPopupSconto(){
+  document.getElementById('sconto-overlay').classList.add('hidden');
+}
+function scOnChange(){
+  const t=document.getElementById('sc-tipo').value;
+  const lbl=document.getElementById('sc-lbl-valore');
+  const pct=t.startsWith('pct');
+  lbl.textContent=pct?'PERCENTUALE (%)':'IMPORTO (€)';
+  document.getElementById('sc-row-valore').style.display=t?'block':'none';
+  document.getElementById('sc-row-durata').style.display=(t&&t!=='eur-anno')?'block':'none';
+  aggiornaScontoPreview();
+}
+function aggiornaScontoPreview(){
+  const t=document.getElementById('sc-tipo').value;
+  const v=parseFloat(document.getElementById('sc-valore').value)||0;
+  const dur=parseInt(document.getElementById('sc-durata').value)||0;
+  const pr=document.getElementById('sc-preview');
+  if(!t||!v){pr.textContent='';return;}
+  const mesi=dur>0?dur:12;
+  let desc='';
+  if(t==='eur-mese') desc=`= ${(v*mesi).toFixed(2)} €/anno (su ${mesi} mesi)`;
+  else if(t==='eur-anno') desc=`= ${v.toFixed(2)} €/anno`;
+  else desc=`applicato su ${mesi} mesi`;
+  pr.textContent='→ '+desc;
+}
+function salvaPopupSconto(){
+  if(_scontoOi<0) return;
+  const sc={
+    tipo: document.getElementById('sc-tipo').value,
+    valore: parseFloat(document.getElementById('sc-valore').value)||0,
+    durata: parseInt(document.getElementById('sc-durata').value)||0
+  };
+  S.operatori[_scontoOi].righe[_scontoRi].sconto=sc;
+  saveState(); renderOfferte(); chiudiPopupSconto();
+}
+// ── FINE SCONTO ─────────────────────────
+
+// Converte ISO (YYYY-MM-DD) → GG/MM/AAAA per display
+function scFmt(iso){
+  if(!iso) return '';
+  const p=iso.split('-');
+  if(p.length===3) return p[2]+'/'+p[1]+'/'+p[0];
+  return iso;
+}
+// Converte GG/MM/AAAA → ISO (YYYY-MM-DD) per storage
+function scParse(s){
+  if(!s) return '';
+  const p=s.trim().split('/');
+  if(p.length===3&&p[0].length<=2&&p[1].length<=2&&p[2].length===4){
+    const d=parseInt(p[0]),m=parseInt(p[1]),y=parseInt(p[2]);
+    if(d>=1&&d<=31&&m>=1&&m<=12&&y>=2024)
+      return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  return '';
+}
+function setScadenzaOp(oi, val){
+  const iso=scParse(val);
+  if(val&&!iso){ alert('Formato data non valido. Usa GG/MM/AAAA (es. 31/12/2025)'); return; }
+  if(S.operatori[oi]) S.operatori[oi].scadenza = iso;
+  saveState(); renderOfferte();
+}
+
+function spiegaNull(r){
+  const im=S.imp;
+  if(r.tipo==='luce'){
+    if(!kwhEffettivo()) return 'kWh mancanti';
+    if(!r.prezzo&&r.spread===null) return 'prezzo mancante';
+    if(r.spread!==null&&!im.mono&&!im.f1) return 'PUN mancante';
+  } else {
+    if(!smcEffettivo()) return 'Smc mancanti';
+    if(!r.prezzo&&r.spread===null) return 'prezzo mancante';
+    if(r.spread!==null&&!im.psv) return 'PSV mancante';
+  }
+  return '—';
+}
+
+// ══════════════════════════════════════
+//  RENDER OFFERTE
+// ══════════════════════════════════════
+function bestPerTipo(){
+  let bL=null,bG=null;
+  S.operatori.forEach(op=>op.righe.forEach(r=>{
+    const v=calcolaRiga(r);
+    if(v!=null){
+      if(r.tipo==='luce'&&(bL==null||v.materia<bL)) bL=v.materia;
+      if(r.tipo==='gas' &&(bG==null||v.materia<bG)) bG=v.materia;
+    }
+  }));
+  return {bL,bG};
+}
+
+// Salva tutti i valori presenti nel DOM prima di ricostruire la tabella,
+// per non perdere dati digitati ma non ancora committed via onchange
+function flushDomToState(){
+  // Mappa: posizione colonna → campo e tipo (testo o numero)
+  // Le colonne degli input nelle righe dati (escludendo nomeCell):
+  // 0=tipo(badge,no input) 1=tipoContratto 2=durata 3=prezzo 4=quota
+  // 5=spread 6=perdita 7=penale 8=radioPD 9=sconto(popup)
+  const campiNum=['durata','prezzo','quota','spread','perdita','penale'];
+  document.querySelectorAll('table.offerte tbody tr[data-oi]').forEach(tr=>{
+    const oi=+tr.dataset.oi, ri=+tr.dataset.ri;
+    if(isNaN(oi)||isNaN(ri)) return;
+    const r=S.operatori[oi]?.righe[ri]; if(!r) return;
+    tr.querySelectorAll('input.ci').forEach(inp=>{
+      const oc=inp.getAttribute('onchange')||'';
+      // Estrai il nome del campo dall'attributo onchange
+      const mV=oc.match(/setCampoV\(this,\d+,\d+,'([^']+)'\)/);
+      const mN=oc.match(/setCampoN\(this,\d+,\d+,'([^']+)'/);
+      if(mV){
+        const campo=mV[1];
+        r[campo]=inp.value.trim();
+      } else if(mN){
+        const campo=mN[1];
+        const v=parseFloat(inp.value.replace(',','.'))||0;
+        r[campo]=v;
+      }
+    });
+  });
+  saveState();
+}
+function renderOfferte(){
+  // Prima di rigenerare il DOM, flush dei valori non ancora salvati via onchange
+  if(!renderOfferte._skipFlush) flushDomToState();
+  const el=document.getElementById('offerte-tbl');
+  const ops=S.operatori;
+  if(!ops.length){
+    el.innerHTML='<div style="padding:20px 16px"><p class="text-muted">Nessun operatore. Clicca "+ Aggiungi operatore".</p></div>';
+    renderRanking(); return;
+  }
+  const {bL,bG}=bestPerTipo();
+
+  const TH=`<thead><tr>
+    <th class="lbl">Operatore</th>
+    <th class="tipo">L/G</th>
+    <th class="col-t" data-tip="Tipo contratto (libero, monorario, biorario…)">Tipo</th>
+    <th class="col-s" data-tip="Durata in mesi">Durata/mesi</th>
+    <th class="col-m" data-tip="€/kWh (luce) o €/Smc (gas) — vuoto per variabili con spread">€/kWh·Smc</th>
+    <th class="col-s" data-tip="Costi di commercializzazione €/mese">Quota €/m</th>
+    <th class="col-xs" data-tip="Spread su PUN (luce) o PSV (gas) per offerte variabili">Spread</th>
+    <th class="col-xs" data-tip="Perdita rete in % (es. 1.5)">Perd.%</th>
+    <th class="col-xs" data-tip="Penale massima di uscita in €">Penale €</th>
+    <th class="col-xs" data-tip="La penale è decrescente nel tempo?">Pen.dec</th>
+    <th class="col-m" data-tip="Sconto applicato (clicca ✏️ per configurare tipo e base)">Sconto</th>
+    <th class="ris">Risultato</th>
+    <th class="note-cell" data-tip="Note">📝</th>
+    <th class="azioni"></th>
+  </tr></thead>`;
+
+  let tables='';
+  ops.forEach((op,oi)=>{
+    let rows='';
+    op.righe.forEach((r,ri)=>{
+      const isL=r.tipo==='luce';
+      const v=calcolaRiga(r);
+      const isBest=(isL&&v!=null&&v.materia===bL)||(!isL&&v!=null&&v.materia===bG);
+      const lblCls=isL?'luce-row':'gas-row';
+      const badge=`<span class="badge badge-${isL?'luce':'gas'}">${isL?'Luce':'Gas'}</span>`;
+      const rn=`rpd_${oi}_${ri}`;
+      const si=r.penaleDec===true?'checked':'', no=r.penaleDec!==true?'checked':'';
+      const radioPD=`<div class="radio-yn">
+        <label><input type="radio" name="${rn}" value="1" ${si} onchange="setCampo(${oi},${ri},'penaleDec',true)"> Sì</label>
+        <label><input type="radio" name="${rn}" value="0" ${no} onchange="setCampo(${oi},${ri},'penaleDec',false)"> No</label>
+      </div>`;
+      const risHTML=v!=null
+        ? `<div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:nowrap">
+             <div style="text-align:center">
+               <div style="font-size:10px;color:var(--muted)">Materia</div>
+               <div style="font-weight:700;white-space:nowrap">${fmtEur(v.materia)}</div>
+             </div>
+             <div style="color:var(--border);font-size:16px">|</div>
+             <div style="text-align:center">
+               <div style="font-size:10px;color:var(--muted)">Tot. stimato</div>
+               <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">${fmtEur(v.totale)}</div>
+             </div>
+           </div>`
+        : `<span class="text-muted" style="font-size:10px">${spiegaNull(r)}</span>`;
+      const noteIco=r.note?'📝':'✎';
+
+      const nomeCell = ri===0 ? (()=>{
+        const sc=op.scadenza||'';
+        let scBadge='';
+        if(sc){
+          const oggi=new Date(); oggi.setHours(0,0,0,0);
+          const dSc=new Date(sc);
+          const diff=Math.round((dSc-oggi)/(1000*60*60*24));
+          if(diff<0) scBadge=`<span style="font-size:10px;font-weight:700;color:#fff;background:#e53e3e;border-radius:4px;padding:1px 5px;white-space:nowrap">⛔ scaduta</span>`;
+          else if(diff<=30) scBadge=`<span style="font-size:10px;font-weight:700;color:#fff;background:#e67e22;border-radius:4px;padding:1px 5px;white-space:nowrap">⚠️ scade in ${diff}g</span>`;
+          else scBadge=`<span style="font-size:10px;font-weight:600;color:#276749;background:#c6f6d5;border-radius:4px;padding:1px 5px;white-space:nowrap">✅ valida</span>`;
+        }
+        return `<td class="lbl ${lblCls}" rowspan="${op.righe.length}" style="vertical-align:top;padding-top:4px">
+          <input class="ci left" type="text" value="${esc(op.nome)}" placeholder="Nome operatore" style="font-size:13px;font-weight:600;width:100%" onchange="renameOperatore(${oi},this.value)">
+          <div style="display:flex;align-items:center;gap:4px;margin-top:4px">
+            <input type="text" inputmode="numeric" value="${esc(scFmt(sc))}" placeholder="GG/MM/AAAA" title="Scadenza offerta" maxlength="10" style="font-size:10px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--muted);width:90px" onchange="setScadenzaOp(${oi},this.value)">
+            ${scBadge}
+          </div>
+        </td>`;
+      })() : '';
+
+      rows+=`<tr class="${isBest?'best-row':''}" data-oi="${oi}" data-ri="${ri}">
+        ${nomeCell}
+        <td class="tipo">${badge}</td>
+        <td class="col-t"><input class="ci left" type="text" value="${esc(r.tipoContratto)}" placeholder="tipo…" onchange="setCampoV(this,${oi},${ri},'tipoContratto')"></td>
+        <td class="col-s"><input class="ci" type="text" inputmode="numeric" value="${r.durata||''}" placeholder="—" onchange="setCampoN(this,${oi},${ri},'durata','durata')"></td>
+        <td class="col-m"><input class="ci" type="text" inputmode="decimal" value="${r.prezzo?fmtP(r.prezzo):''}" placeholder="—" oninput="setPrezzoLive(this,${oi},${ri})" onchange="setCampoN(this,${oi},${ri},'prezzo',isL?'prezzo':'prezzoG')"></td>
+        <td class="col-s"><input class="ci" type="text" inputmode="decimal" value="${r.quota||''}" placeholder="—" onchange="setCampoN(this,${oi},${ri},'quota','quota')"></td>
+        <td class="col-xs"><input class="ci" type="text" inputmode="decimal" value="${fmtP(r.spread)}" placeholder="—" onchange="setCampoN(this,${oi},${ri},'spread','spread')"></td>
+        <td class="col-xs"><input class="ci" type="text" inputmode="decimal" value="${r.perdita||''}" placeholder="—" onchange="setCampoN(this,${oi},${ri},'perdita','perdita')"></td>
+        <td class="col-xs"><input class="ci" type="text" inputmode="decimal" value="${r.penale||''}" placeholder="—" onchange="setCampoN(this,${oi},${ri},'penale','penale')"></td>
+        <td class="col-xs">${radioPD}</td>
+        <td class="col-m" style="cursor:pointer" onclick="apriPopupSconto(${oi},${ri})" title="Clicca per configurare lo sconto">${badgeSconto(r.sconto)}</td>
+        <td class="ris${isBest?' best':''}">${risHTML}</td>
+        <td class="note-cell" onclick="openNote(${oi},${ri},this)">${noteIco}</td>
+        <td class="azioni"><button class="btn-icon" onclick="deleteRiga(${oi},${ri})" title="Elimina">✕</button></td>
+      </tr>`;
+    });
+
+    const hasL=op.righe.some(r=>r.tipo==='luce');
+    const hasG=op.righe.some(r=>r.tipo==='gas');
+    const addRow=`<tr class="add-row"><td colspan="15">
+      <span class="text-muted" style="font-size:11px;margin-right:8px">${esc(op.nome)}</span>
+      ${!hasL?`<button class="btn-add btn-xs" onclick="addRiga(${oi},'luce')">+ Luce</button>`:''}
+      ${!hasG?`<button class="btn-add btn-xs" style="margin-left:4px" onclick="addRiga(${oi},'gas')">+ Gas</button>`:''}
+      <button class="btn-icon" style="margin-left:10px;color:var(--red)" onclick="deleteOp(${oi})">🗑️ Elimina operatore</button>
+    </td></tr>`;
+
+    tables += (oi>0?'<div style="margin-top:16px"></div>':'')
+      + `<table class="offerte">${TH}<tbody>${rows}${addRow}</tbody></table>`;
+  });
+
+  el.innerHTML=tables;
+  renderRanking();
+}
+
+// ══════════════════════════════════════
+//  CRUD OPERATORI
+// ══════════════════════════════════════
+function nuovaRiga(tipo){
+  return {tipo,tipoContratto:'',durata:0,prezzo:0,quota:0,spread:null,perdita:0,penale:0,penaleDec:false,sconto:{tipo:'',base:'',valore:0,durata:0},note:''};
+}
+function ordinaOperatori(){
+  S.operatori.sort((a,b)=>{
+    const na=(a.nome||'').toLowerCase(), nb=(b.nome||'').toLowerCase();
+    return na<nb?-1:na>nb?1:0;
+  });
+  saveState();
+  renderOfferte._skipFlush=true;
+  renderOfferte();
+  renderOfferte._skipFlush=false;
+  refreshRisultati();
+}
+function addOperatore(){
+  const nome=prompt('Nome operatore (es. Iren, Enel, Octopus):');
+  if(nome===null) return;
+  const t=nome.trim(); if(!t){alert('Inserisci un nome.');return;}
+  flushDomToState();
+  const oi=S.operatori.length;
+  S.operatori.push({nome:t,scadenza:'',righe:[nuovaRiga('luce'),nuovaRiga('gas')]});
+  saveState(); renderOfferte();
+  // Scroll al nuovo operatore
+  setTimeout(()=>{
+    const tbls=document.querySelectorAll('table.offerte');
+    if(tbls[oi]) tbls[oi].scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+function renameOperatore(oi,val){
+  S.operatori[oi].nome=val.trim();
+  saveState();
+}
+function addRiga(oi,tipo){
+  flushDomToState();
+  S.operatori[oi].righe.push(nuovaRiga(tipo));
+  saveState(); renderOfferte();
+}
+function deleteRiga(oi,ri){
+  const op=S.operatori[oi];
+  if(op.righe.length===1){
+    if(!confirm('Ultima riga: vuoi eliminare anche l\'operatore "'+op.nome+'"?')) return;
+    flushDomToState();
+    S.operatori.splice(oi,1);
+  } else {
+    flushDomToState();
+    op.righe.splice(ri,1);
+  }
+  saveState(); renderOfferte();
+}
+function deleteOp(oi){
+  if(!confirm('Eliminare "'+S.operatori[oi].nome+'" e tutte le sue righe?')) return;
+  flushDomToState();
+  S.operatori.splice(oi,1);
+  saveState(); renderOfferte();
+}
+
+// ══════════════════════════════════════
+//  SETTER CELLE
+// ══════════════════════════════════════
+function setCampo(oi,ri,campo,val){
+  S.operatori[oi].righe[ri][campo]=val;
+  saveState(); refreshRisultati();
+}
+function setCampoV(inp,oi,ri,campo){
+  let v=inp.value.trim();
+  // Normalizza capitalizzazione
+  if(v) v=v.charAt(0).toUpperCase()+v.slice(1).toLowerCase();
+  // Avviso se sembra un numero (prezzo scritto nel campo tipo)
+  if(/^[\d.,]+$/.test(v)){
+    showTip(inp,'Questo campo è per il tipo contratto (Fisso, Variabile, Flex…). Il prezzo va nella colonna €/kWh o €/Smc.');
+    inp.classList.add('c-warn');
+  } else {
+    inp.classList.remove('c-warn');
+  }
+  inp.value=v;
+  S.operatori[oi].righe[ri][campo]=v;
+  saveState();
+}
+function setPrezzoLive(inp,oi,ri){
+  const v=parseFloat(inp.value.replace(',','.'));
+  if(!isNaN(v)&&v>0){ S.operatori[oi].righe[ri].prezzo=v; refreshRisultati(); }
+}
+function setCampoN(inp,oi,ri,campo,limKey){
+  const raw=inp.value.replace(',','.');
+  if(raw===''){ S.operatori[oi].righe[ri][campo]=(campo==='spread'?null:0); saveState(); refreshRisultati(); return; }
+  const v=parseFloat(raw);
+  if(isNaN(v)||v<0){ inp.classList.add('c-err'); showTip(inp,'Inserire un numero positivo.'); return; }
+  inp.classList.remove('c-err','c-warn');
+  if(limKey){
+    const cfg=LIMITI[limKey];
+    if(cfg&&v>cfg.max){
+      inp.classList.add('c-warn');
+      let msg;
+      if(cfg.msg==='quota'){
+        const mens=(v/12).toFixed(2).replace('.',',');
+        msg=`⚠️ Quota commerciale fuori intervallo normale (>${cfg.max} €/mese).\n\nHai inserito: ${v} €\n\nSe è un valore annuale, il corrispettivo mensile è: ${mens} €/mese\n\nIl campo vuole il valore MENSILE.\n\nConfermi il valore inserito (${v} €/mese)?`;
+      } else {
+        msg=cfg.msg+'\n\nValore inserito: '+v+'\nConfermi?';
+      }
+      if(!confirm(msg)){
+        inp.value=S.operatori[oi].righe[ri][campo]||'';
+        inp.classList.remove('c-warn'); return;
+      }
+    }
+  }
+  S.operatori[oi].righe[ri][campo]=v;
+  saveState(); refreshRisultati();
+}
+
+function refreshRisultati(){
+  const {bL,bG}=bestPerTipo();
+  document.querySelectorAll('table.offerte tbody tr[data-oi]').forEach(tr=>{
+    const oi=+tr.dataset.oi, ri=+tr.dataset.ri;
+    if(isNaN(ri)) return;
+    const r=S.operatori[oi]?.righe[ri]; if(!r) return;
+    const v=calcolaRiga(r);
+    const isBest=(r.tipo==='luce'&&v!=null&&v.materia===bL)||(r.tipo==='gas'&&v!=null&&v.materia===bG);
+    const td=tr.querySelector('td.ris');
+    if(td){
+      td.innerHTML=v!=null
+        ? `<div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:nowrap">
+             <div style="text-align:center">
+               <div style="font-size:10px;color:var(--muted)">Materia</div>
+               <div style="font-weight:700;white-space:nowrap">${fmtEur(v.materia)}</div>
+             </div>
+             <div style="color:var(--border);font-size:16px">|</div>
+             <div style="text-align:center">
+               <div style="font-size:10px;color:var(--muted)">Tot. stimato</div>
+               <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">${fmtEur(v.totale)}</div>
+             </div>
+           </div>`
+        : `<span class="text-muted" style="font-size:10px">${spiegaNull(r)}</span>`;
+      td.className='ris'+(isBest?' best':'');
+    }
+    tr.className=isBest?'best-row':'';
+  });
+  renderRanking();
+}
+
+// ══════════════════════════════════════
+//  NOTE POPUP
+// ══════════════════════════════════════
+let _noteTarget={oi:null,ri:null};
+function openNote(oi,ri,el){
+  _noteTarget={oi,ri};
+  document.getElementById('note-ta').value=S.operatori[oi].righe[ri].note||'';
+  const popup=document.getElementById('note-popup');
+  const r=el.getBoundingClientRect();
+  popup.style.top=(r.bottom+window.scrollY+6)+'px';
+  popup.style.left=Math.min(r.left+window.scrollX-220,window.innerWidth-275)+'px';
+  popup.classList.add('open');
+  document.getElementById('note-ta').focus();
+}
+function saveNote(){
+  const {oi,ri}=_noteTarget; if(oi===null) return;
+  S.operatori[oi].righe[ri].note=document.getElementById('note-ta').value.trim();
+  saveState(); closeNote(); renderOfferte();
+}
+function closeNote(){
+  document.getElementById('note-popup').classList.remove('open');
+  _noteTarget={oi:null,ri:null};
+}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('note-popup');
+  if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('td.note-cell')) closeNote();
+});
+
+// ══════════════════════════════════════
+//  RANKING con dettaglio calcolo
+// ══════════════════════════════════════
+function renderRanking(){
+  const el=document.getElementById('ranking-box');
+  const ops=S.operatori;
+  if(!ops.length){ el.innerHTML='<p class="text-muted">Nessun operatore inserito.</p>'; return; }
+  if(!kwhEffettivo()&&!smcEffettivo()){ el.innerHTML='<p class="text-muted">Inserisci i consumi annui (storico o manuale) per vedere il ranking.</p>'; return; }
+
+  const a = S.arera || areraDefault();
+  const linkL2 = a.L_linkArera || '';
+  const linkG2 = a.G_linkArera || '';
+
+  const totOp=ops.map((op,oi)=>{
+    let mL=null,mG=null,totL=null,totG=null;
+    op.righe.forEach(r=>{
+      const v=calcolaRiga(r);
+      if(r.tipo==='luce'&&v!=null){ mL=v.materia; totL=v.totale; }
+      if(r.tipo==='gas' &&v!=null){ mG=v.materia; totG=v.totale; }
+    });
+    const materia=(mL!=null||mG!=null)?(mL||0)+(mG||0):null;
+    const totale=(totL!=null||totG!=null)?(totL||0)+(totG||0):null;
+    return {nome:op.nome,materia,totale,mL,mG,totL,totG,oi};
+  });
+
+  const validi=totOp.filter(x=>x.materia!=null).sort((a,b)=>a.materia-b.materia);
+  if(!validi.length){ el.innerHTML='<p class="text-muted">Dati insufficienti per il calcolo (controlla prezzi e consumi).</p>'; return; }
+
+  const best=validi[0].materia;
+  const _areraHref = linkL2 || linkG2;
+  const fonteArera = _areraHref ? `<a href="${esc(_areraHref)}" target="_blank" rel="noopener" style="color:var(--purple)">Fonte: ARERA</a>` : '';
+  el.innerHTML=`<p class="text-muted" style="margin-bottom:10px;font-size:12px">
+    Ranking per <strong>materia energia</strong> (l'unica parte che varia tra operatori). Il totale stimato include le componenti ARERA, uguali per tutti. ${fonteArera} · Clicca per il dettaglio.
+  </p>`
+    +validi.map((x,i)=>{
+      const delta=x.materia-best;
+      const detM=[x.mL!=null?'⚡ '+fmtEur(x.mL):'',x.mG!=null?'🔥 '+fmtEur(x.mG):''].filter(Boolean).join(' · ');
+      const detT=[x.totL!=null?'⚡ '+fmtEur(x.totL):'',x.totG!=null?'🔥 '+fmtEur(x.totG):''].filter(Boolean).join(' · ');
+      const op=ops[x.oi];
+      const dettaglioHtml = op.righe.map(r=>htmlDettaglioRiga(r)).join('');
+      return `<div class="ranking-item${i===0?' rank-1':''}">
+        <div class="ranking-hdr" onclick="toggleDetail(this)">
+          <div class="rank-num">${i===0?'🏆':i+1}</div>
+          <div class="rank-name">${esc(x.nome)||'—'}<br>
+            <span class="text-muted" style="font-size:11px;font-weight:400">Materia: ${detM}</span><br>
+            <span class="text-muted" style="font-size:11px;font-weight:400">Totale: ${detT}</span>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Materia</div>
+            <div class="rank-val">${fmtEur(x.materia)}/anno</div>
+            ${x.totale!=null?`<div style="font-size:11px;color:var(--muted);margin-top:2px">Totale stimato</div><div style="font-size:13px;font-weight:600">${fmtEur(x.totale)}/anno</div>`:''}
+            ${i===0?'<div class="rank-delta" style="color:var(--green)">migliore</div>':`<div class="rank-delta">+${fmtEur(delta)}</div>`}
+          </div>
+          <div class="rank-toggle">▼</div>
+        </div>
+        <div class="rank-detail">
+          <div class="detail-cols">${dettaglioHtml}</div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function toggleDetail(hdr){
+  const detail=hdr.nextElementSibling;
+  const toggle=hdr.querySelector('.rank-toggle');
+  const isOpen=detail.classList.contains('open');
+  detail.classList.toggle('open',!isOpen);
+  toggle.textContent=isOpen?'▼':'▲';
+}
+
+// ══════════════════════════════════════
+//  STORICO
+// ══════════════════════════════════════
+function renderStorico(tipo){
+  const el=document.getElementById('storico-'+tipo);
+  const mesi=last12();
+  const unit=tipo==='luce'?'kWh':'Smc';
+  const cons=S.consumi[tipo];
+
+  const thM=mesi.map(m=>`<th class="cm">${fmtM(m)}</th>`).join('');
+  const totC=mesi.reduce((s,m)=>s+n(cons[m]?.cons),0);
+  const totI=mesi.reduce((s,m)=>s+n(cons[m]?.importo),0);
+
+  const rC=mesi.map(m=>`<td class="cm">
+    <input class="ci" type="text" inputmode="decimal" value="${cons[m]?.cons??''}" placeholder="—"
+      data-tipo="${tipo}" data-mese="${m}" data-campo="cons"></td>`).join('');
+
+  const rI=mesi.map(m=>{
+    const v=cons[m]?.importo;
+    const disp=(v!=null&&v!=='')? parseFloat(v).toFixed(2).replace('.',','):'';
+    return `<td class="cm">
+      <input class="ci" type="text" inputmode="decimal" value="${disp}" placeholder="—"
+        data-tipo="${tipo}" data-mese="${m}" data-campo="importo"></td>`;
+  }).join('');
+
+  el.innerHTML=`<table class="storico">
+    <colgroup><col style="width:var(--label-w)">${mesi.map(()=>`<col style="width:var(--col-m)">`).join('')}<col style="width:90px"></colgroup>
+    <thead><tr><th class="lbl"></th>${thM}<th class="tot">Totale 12m</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl">${unit} consumati</td>${rC}<td class="tot" id="tc-${tipo}">${totC>0?totC.toFixed(tipo==='luce'?0:1)+' '+unit:'—'}</td></tr>
+      <tr><td class="lbl">Importo bolletta €</td>${rI}<td class="tot" id="ti-${tipo}">${totI>0?totI.toFixed(2).replace('.',',')+' €':'—'}</td></tr>
+    </tbody></table>`;
+
+  el.querySelectorAll('input.ci').forEach(inp=>{
+    inp.addEventListener('change',function(){
+      const {tipo:t,mese,campo}=this.dataset;
+      if(!S.consumi[t][mese]) S.consumi[t][mese]={};
+      const norm=this.value.replace(',','.');
+      if(campo==='cons'){
+        S.consumi[t][mese].cons=parseFloat(norm)||0;
+      } else {
+        const nv=parseFloat(norm);
+        S.consumi[t][mese].importo=isNaN(nv)?null:nv;
+        if(!isNaN(nv)) this.value=nv.toFixed(2).replace('.',',');
+      }
+      saveState();
+      const m2=last12(),c2=S.consumi[t];
+      const tC=m2.reduce((s,m)=>s+n(c2[m]?.cons),0);
+      const tI=m2.reduce((s,m)=>s+n(c2[m]?.importo),0);
+      const tcEl=document.getElementById('tc-'+t), tiEl=document.getElementById('ti-'+t);
+      if(tcEl) tcEl.textContent=tC>0?tC.toFixed(t==='luce'?0:1)+' '+unit:'—';
+      if(tiEl) tiEl.textContent=tI>0?tI.toFixed(2).replace('.',',')+' €':'—';
+      renderImpView();
+      refreshRisultati();
+    });
+  });
+}
+
+// ══════════════════════════════════════
+//  EXPORT / IMPORT
+// ══════════════════════════════════════
+function exportData(){
+  // Salva prima lo stato corrente (profili + VB)
+  _profili[_profiloAttivo] = S;
+  vbSave();
+  let disclaimerTs = null;
+  try { disclaimerTs = localStorage.getItem(LS_DISCLAIMER_KEY); } catch(e){}
+  const payload = { profili: _profili, profiloAttivo: _profiloAttivo, disclaimerAccettatoIl: disclaimerTs, vb: VB };
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  a.download='energia-casa-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+function importData(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      // Nuovo formato multi-profilo
+      if(d.profili && d.profiloAttivo){
+        if(!confirm('Importare tutti i profili? I dati attuali saranno sostituiti.')) return;
+        _profili = d.profili;
+        _profiloAttivo = d.profiloAttivo || Object.keys(d.profili)[0];
+        S = _profili[_profiloAttivo];
+        saveProfili();
+        // Ripristina VB se presente nell'export
+        if(d.vb){ VB=d.vb; try{ localStorage.setItem(LS_VB_KEY,JSON.stringify(VB)); }catch(e){} }
+        renderProfiloSelect();
+        renderAll();
+        vbLoad();
+      }
+      // Vecchio formato singolo (energiaCasa3 export)
+      else if(d.luce && (d.luce.contratto !== undefined || d.luce.consumi !== undefined)){
+        const nome = prompt('Vecchio formato rilevato. Nome profilo per questi dati:', 'Importato') || 'Importato';
+        const stato = migraVecchioFormato(d);
+        _profili[nome] = stato;
+        _profili[_profiloAttivo] = S;
+        _profiloAttivo = nome;
+        S = stato;
+        saveProfili();
+        renderProfiloSelect();
+        renderAll();
+      }
+      // Vecchio formato singolo nuovo schema
+      else if(d.imp && d.operatori && d.consumi){
+        const nome = prompt('Nome profilo per questi dati:', 'Importato') || 'Importato';
+        _profili[nome] = d;
+        _profili[_profiloAttivo] = S;
+        _profiloAttivo = nome;
+        S = d;
+        saveProfili();
+        renderProfiloSelect();
+        renderAll();
+      } else {
+        alert('Formato non riconosciuto.');
+      }
+    }catch(ex){ alert('Errore lettura file: '+ex.message); }
+  };
+  r.readAsText(f); e.target.value='';
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+function renderAll(){
+  renderStorico('luce');
+  renderStorico('gas');
+  renderImpView();
+  renderOfferte();
+}
+
+// ══════════════════════════════════════
+//  DISCLAIMER
+// ══════════════════════════════════════
+function discCheckChange(){
+  const ok = document.getElementById('disc-checkbox').checked;
+  const btn = document.getElementById('disc-btn-ok');
+  btn.classList.toggle('active', ok);
+}
+function discAccetta(){
+  if(!document.getElementById('disc-checkbox').checked) return;
+  const ts = new Date().toISOString();
+  try {
+    let arr = [];
+    try { const raw = localStorage.getItem(LS_DISCLAIMER_KEY); arr = raw ? JSON.parse(raw) : []; if(!Array.isArray(arr)) arr=[arr]; } catch(e){ arr=[]; }
+    arr.push(ts);
+    localStorage.setItem(LS_DISCLAIMER_KEY, JSON.stringify(arr));
+  } catch(e){}
+  document.getElementById('disclaimer-overlay').classList.add('hidden');
+}
+function discEsci(){
+  document.getElementById('disclaimer-overlay').classList.add('hidden');
+  document.getElementById('disc-blocked').classList.add('show');
+}
+function initDisclaimer(){
+  document.getElementById('disc-version-date').textContent = APP_VERSION_DATE;
+  // Il disclaimer appare ad ogni avvio — non viene mai saltato
+}
+
+// ── TOOLTIP JS (funziona anche dentro contenitori overflow:auto) ──
+(function(){
+  const box = document.getElementById('tip-box');
+  let cur = null;
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (!el || el === cur) return;
+    cur = el;
+    box.textContent = el.dataset.tip;
+    box.style.display = 'block';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!cur) return;
+    const x = e.clientX + 12, y = e.clientY - 28;
+    box.style.left = Math.min(x, window.innerWidth - box.offsetWidth - 8) + 'px';
+    box.style.top  = Math.max(y, 4) + 'px';
+  });
+  document.addEventListener('mouseout', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el && el === cur) { cur = null; box.style.display = 'none'; }
+  });
+})();
+
+// ── VERIFICA BOLLETTA ───────────────────────────────────────
+const LS_VB_KEY = 'energiaCasaVB';
+let VB = { L:{mesi:'',kwh:'',prezzo:'',quota:'',trafisso:'',travar:'',oneri:'',cdispd:'',accise:'',iva:'',reale:'',canonetv:'',potenzakW:'3',voci:[]}, G:{mesi:'',smc:'',prezzo:'',quota:'',trafisso:'',travar:'',oneri:'',accise:'',iva:'',reale:'',voci:[]} };
+
+// Naviga alla sezione verifica bolletta e pre-popola ARERA
+function apriVerificaBolletta(){
+  const el=document.querySelector('.section-title');
+  // trova la section con titolo "Verifica bolletta"
+  const sections=document.querySelectorAll('.section-hdr .section-title');
+  let target=null;
+  sections.forEach(s=>{ if(s.textContent.includes('Verifica bolletta')) target=s.closest('.section'); });
+  if(target){ target.scrollIntoView({behavior:'smooth',block:'start'}); }
+  // pre-popola ARERA usando i mesi già inseriti
+  const mesiL = parseFloat(document.getElementById('vb-L-mesi').value)||0;
+  const mesiG = parseFloat(document.getElementById('vb-G-mesi').value)||0;
+  vbPopolaArera(mesiL, mesiG);
+}
+
+// Gestione cambio potenza nel VB
+function vbOnPotenzaChange(){
+  const sel=document.getElementById('vb-L-potenzakW');
+  const warn=document.getElementById('vb-L-potenza-warn');
+  if(!sel) return;
+  if(sel.value==='altro'){
+    if(warn) warn.style.display='';
+    // non cambia i preset ARERA, l'utente inserisce manualmente
+    vbSave();
+    return;
+  }
+  if(warn) warn.style.display='none';
+  // Applica preset ARERA corrispondente al VB, indipendentemente da S.arera
+  vbSave();
+  // Ricalcola tutti i campi ARERA con la nuova potenza
+  const mesiL=parseFloat(document.getElementById('vb-L-mesi').value)||0;
+  const mesiG=parseFloat(document.getElementById('vb-G-mesi').value)||0;
+  vbPopolaArera(mesiL, mesiG);
+  vbAggiornaCampiArera(); // forza aggiornamento travar/oneri/cdispd/accise con preset kW corretto
+  vbCalcola();
+}
+
+// Pre-popola le componenti ARERA proporzionate al numero di mesi
+function vbPopolaArera(mesiL, mesiG){
+  mesiL = parseFloat(mesiL)||0; mesiG = parseFloat(mesiG)||0;
+  // Determina la potenza dal selector VB (può differire da S.arera)
+  const selKw=document.getElementById('vb-L-potenzakW');
+  const kwStr=selKw?selKw.value:'3';
+  let potenza=parseFloat(kwStr)||3;
+  // Per calcoli ARERA usa il preset locale se disponibile, altrimenti S.arera
+  let a;
+  if(kwStr==='3'){
+    // Parametri ARERA per 3kW domestico residente (valori Nov 2025 — aggiornare se disponibile bolletta 3kW)
+    a={L_trasportoFisso:23.04, L_trasportoPotenza:23.52, L_trasportoVar:0.01204, L_oneri:0.0303, L_accise:0.0227, L_franchigia:1800, L_residente:true, L_iva:10, L_cdispD:0, G_trasportoFisso:(S.arera||areraDefault()).G_trasportoFisso, G_ivaBase:(S.arera||areraDefault()).G_ivaBase};
+    potenza=3;
+  } else if(kwStr==='4.5'){
+    // Parametri ARERA per 4,5kW da bolletta Octopus ottobre 2026, POD IT001E70383233
+    // L_trasportoPotenza: (1,960000 + 0,016567) €/kW/mese × 12 = 23,718804 €/kW/anno
+    a={L_trasportoFisso:23.04, L_trasportoPotenza:23.718804, L_trasportoVar:0.014730, L_oneri:0.033153, L_accise:0.022700, L_franchigia:0, L_residente:false, L_iva:10, L_cdispD:0.014642, G_trasportoFisso:(S.arera||areraDefault()).G_trasportoFisso, G_ivaBase:(S.arera||areraDefault()).G_ivaBase};
+    potenza=4.5;
+  } else {
+    a = S.arera || areraDefault();
+    potenza = a.L_potenzakW || 3;
+  }
+
+  // Scrive solo se il campo NON è in override manuale
+  function autoSet(id, val){
+    const el=document.getElementById(id);
+    if(el && el.dataset.manual!=='1'){ el.value=val.toFixed(2).replace('.',','); el.dataset.autoset='1'; }
+  }
+  function setNum(id, val){
+    const el=document.getElementById(id);
+    if(el) el.value=val;
+  }
+
+  // LUCE — trafisso fisso proporzionato ai mesi
+  if(mesiL > 0) autoSet('vb-L-trafisso', (a.L_trasportoFisso + a.L_trasportoPotenza * potenza) * mesiL/12);
+  setNum('vb-L-iva', a.L_iva);
+
+  // GAS — trafisso fisso = rete fissa + oneri fissi (UG2), proporzionati ai mesi
+  if(mesiG > 0) autoSet('vb-G-trafisso', (a.G_trasportoFisso + (a.G_oneriFisso||0)) * mesiG/12);
+  setNum('vb-G-iva', a.G_ivaBase);
+}
+
+// Segna un campo ARERA come override manuale (l'utente ha inserito il valore reale dalla bolletta)
+function vbSetManual(el){
+  el.dataset.manual='1';
+  delete el.dataset.autoset;
+}
+
+// Ricalcola le componenti ARERA variabili (dipendenti da consumo) e le scrive nei campi
+// Se il campo ha data-manual="1" (override manuale dell'utente) NON viene sovrascritto
+function vbAggiornaCampiArera(){
+  // Determina preset locale in base al selector potenza VB
+  const selKw=document.getElementById('vb-L-potenzakW');
+  const kwStr=selKw?selKw.value:'3';
+  let aL;
+  if(kwStr==='3'){
+    aL={L_trasportoFisso:23.04, L_trasportoPotenza:23.52, L_trasportoVar:0.01204, L_oneri:0.0303, L_accise:0.0227, L_franchigia:1800, L_residente:true, L_cdispD:0};
+  } else if(kwStr==='4.5'){
+    // L_trasportoPotenza: (1,960000 + 0,016567 UC6 fisso) €/kW/mese × 12 = 23,718804 €/kW/anno
+    aL={L_trasportoFisso:23.04, L_trasportoPotenza:23.718804, L_trasportoVar:0.014730, L_oneri:0.033153, L_accise:0.022700, L_franchigia:0, L_residente:false, L_cdispD:0.014642};
+  } else {
+    const sa=S.arera||areraDefault();
+    aL={L_trasportoFisso:sa.L_trasportoFisso, L_trasportoPotenza:sa.L_trasportoPotenza, L_trasportoVar:sa.L_trasportoVar, L_oneri:sa.L_oneri, L_accise:sa.L_accise, L_franchigia:sa.L_franchigia, L_residente:sa.L_residente, L_cdispD:0};
+  }
+  // aG: usa S.arera se disponibile, con fallback campo-per-campo da areraDefault()
+  // per i campi aggiunti dopo un eventuale salvataggio (es. G_pcs non ancora presente)
+  const _aGbase = areraDefault();
+  const _aGsaved = S.arera || {};
+  const aG = Object.assign({}, _aGbase, _aGsaved,
+    // Ripristina da default i campi che risultano zero/null/undefined in S.arera
+    // ma che hanno un valore reale nel default — indica un campo mancante nel vecchio salvataggio
+    Object.fromEntries(
+      ['G_pcs','G_oneriFisso'].filter(k => !(_aGsaved[k]>0)).map(k=>[k,_aGbase[k]])
+    )
+  );
+  const mesiL = parseFloat(document.getElementById('vb-L-mesi').value)||0;
+  const mesiG = parseFloat(document.getElementById('vb-G-mesi').value)||0;
+  const kwh   = parseFloat(document.getElementById('vb-L-kwh').value)||0;
+  const smc   = parseFloat(document.getElementById('vb-G-smc').value)||0;
+
+  // Scrivi campo ARERA solo se NON è in override manuale
+  function autoSetL(id, val){
+    const el=document.getElementById(id);
+    if(el && el.dataset.manual!=='1'){ el.value=val.toFixed(2).replace('.',','); el.dataset.autoset='1'; }
+  }
+  function autoSetG(id, val){
+    const el=document.getElementById(id);
+    if(el && el.dataset.manual!=='1'){ el.value=val.toFixed(2).replace('.',','); el.dataset.autoset='1'; }
+  }
+
+  // Luce — trafisso fisso dipende dai mesi; le voci variabili dipendono da kwh
+  if(mesiL>0){
+    const selKwEl=document.getElementById('vb-L-potenzakW');
+    const kw=parseFloat(selKwEl?selKwEl.value:'3')||3;
+    autoSetL('vb-L-trafisso', (aL.L_trasportoFisso + aL.L_trasportoPotenza*kw) * mesiL/12);
+  }
+  if(mesiL>0 && kwh>0){
+    const traVarL  = kwh * aL.L_trasportoVar;
+    const oneriL   = kwh * aL.L_oneri;
+    const cdispdL  = kwh * aL.L_cdispD;
+    const franchigia = aL.L_residente ? (aL.L_franchigia*(mesiL/12)) : 0;
+    const kwhTassati = Math.max(0, kwh - franchigia);
+    const acciseL  = kwhTassati * aL.L_accise;
+    autoSetL('vb-L-travar', traVarL);
+    autoSetL('vb-L-oneri',  oneriL);
+    autoSetL('vb-L-cdispd', cdispdL);
+    autoSetL('vb-L-accise', acciseL);
+  }
+  // Gas — trafisso fisso = rete fissa + oneri fissi (UG2), proporzionati ai mesi
+  if(mesiG>0){
+    const oneriFissoG = aG.G_oneriFisso || 0;
+    autoSetG('vb-G-trafisso', (aG.G_trasportoFisso + oneriFissoG) * mesiG/12);
+  }
+  if(mesiG>0 && smc>0){
+    const traVarG = smc * aG.G_trasportoVar;
+    const oneriG  = smc * aG.G_oneri;
+    const acciseG = smc * aG.G_accise;
+    const pcsG    = smc * (aG.G_pcs||0);
+    const addRegG = smc * (aG.G_addRegionale||0);
+    autoSetG('vb-G-travar',       traVarG);
+    autoSetG('vb-G-oneri',        oneriG);
+    autoSetG('vb-G-accise',       acciseG);
+    autoSetG('vb-G-pcs',          pcsG);
+    autoSetG('vb-G-addregionale', addRegG);
+  }
+}
+
+// Azzera tutti i campi ARERA (inclusi gli override manuali) e li ricalcola dai parametri correnti
+function vbResetArera(){
+  ['trafisso','travar','oneri','cdispd','accise','iva'].forEach(k=>{
+    ['L','G'].forEach(t=>{
+      const el=document.getElementById('vb-'+t+'-'+k);
+      if(el){ el.value=''; delete el.dataset.autoset; delete el.dataset.manual; }
+      // Azzera anche il campo bolletta (-b) se esiste
+      const elB=document.getElementById('vb-'+t+'-'+k+'-b');
+      if(elB) elB.value='';
+    });
+  });
+  // Azzera i campi bolletta gas extra (pcs, addregionale)
+  ['pcs','addregionale'].forEach(k=>{
+    const elB=document.getElementById('vb-G-'+k+'-b');
+    if(elB) elB.value='';
+  });
+  const mesiL=parseFloat(document.getElementById('vb-L-mesi').value)||12;
+  const mesiG=parseFloat(document.getElementById('vb-G-mesi').value)||12;
+  // fissi
+  const a=S.arera||areraDefault();
+  const frazL=mesiL/12; const frazG=mesiG/12;
+  const potenza=a.L_potenzakW||3;
+  const elTFL=document.getElementById('vb-L-trafisso');
+  if(elTFL) elTFL.value=((a.L_trasportoFisso+a.L_trasportoPotenza*potenza)*frazL).toFixed(2).replace('.',',');
+  const elIvaL=document.getElementById('vb-L-iva');
+  if(elIvaL) elIvaL.value=a.L_iva;  // type=number, niente virgola
+  const elTFG=document.getElementById('vb-G-trafisso');
+  if(elTFG) elTFG.value=((a.G_trasportoFisso+(a.G_oneriFisso||0))*frazG).toFixed(2).replace('.',',');
+  const elIvaG=document.getElementById('vb-G-iva');
+  if(elIvaG) elIvaG.value=a.G_ivaBase;  // type=number, niente virgola
+  vbCalcola();
+}
+
+function vbLoad(){
+  try{ const r=localStorage.getItem(LS_VB_KEY); if(r) VB=JSON.parse(r); } catch(e){}
+  // Migrazione campi aggiunti dopo la prima versione
+  if(!VB.L.voci) VB.L.voci=[];
+  if(!VB.G.voci) VB.G.voci=[];
+  if(VB.L.cdispd===undefined) VB.L.cdispd='';
+  if(VB.L.canonetv===undefined) VB.L.canonetv='';
+  if(VB.L.potenzakW===undefined) VB.L.potenzakW='3';
+
+  // Ripristina select potenza e eventuale avviso
+  const selKw=document.getElementById('vb-L-potenzakW');
+  if(selKw){
+    const kw=String(VB.L.potenzakW||'3');
+    if(kw==='3'||kw==='4.5') selKw.value=kw;
+    else { selKw.value='altro'; document.getElementById('vb-L-potenza-warn').style.display=''; }
+  }
+
+  // Luce — campi principali + bolletta (-b)
+  ['mesi','kwh','prezzo','quota','trafisso','travar','oneri','cdispd','accise','iva','reale','canonetv'].forEach(k=>{
+    const el=document.getElementById('vb-L-'+k); if(el&&VB.L[k]!==undefined) el.value=VB.L[k];
+    const elB=document.getElementById('vb-L-'+k+'-b'); if(elB&&VB.L[k+'_b']!==undefined) elB.value=VB.L[k+'_b'];
+  });
+  vbRenderVoci('L');
+  // Gas — campi principali + bolletta (-b) + pcs/addregionale bolletta
+  ['mesi','smc','prezzo','quota','trafisso','travar','oneri','accise','iva','iva-quota','reale'].forEach(k=>{
+    const el=document.getElementById('vb-G-'+k); if(el&&VB.G[k]!==undefined) el.value=VB.G[k];
+    const elB=document.getElementById('vb-G-'+k+'-b'); if(elB&&VB.G[k+'_b']!==undefined) elB.value=VB.G[k+'_b'];
+  });
+  ['pcs','addregionale'].forEach(k=>{
+    const elB=document.getElementById('vb-G-'+k+'-b'); if(elB&&VB.G[k+'_b']!==undefined) elB.value=VB.G[k+'_b'];
+  });
+  vbRenderVoci('G');
+  vbCalcola();
+}
+function vbSave(){
+  ['mesi','kwh','prezzo','quota','trafisso','travar','oneri','cdispd','accise','iva','reale','canonetv'].forEach(k=>{
+    const el=document.getElementById('vb-L-'+k); if(el) VB.L[k]=el.value;
+    const elB=document.getElementById('vb-L-'+k+'-b'); if(elB) VB.L[k+'_b']=elB.value;
+  });
+  const selKw=document.getElementById('vb-L-potenzakW');
+  if(selKw) VB.L.potenzakW=selKw.value;
+  ['mesi','smc','prezzo','quota','trafisso','travar','oneri','accise','iva','iva-quota','reale'].forEach(k=>{
+    const el=document.getElementById('vb-G-'+k); if(el) VB.G[k]=el.value;
+    const elB=document.getElementById('vb-G-'+k+'-b'); if(elB) VB.G[k+'_b']=elB.value;
+  });
+  ['pcs','addregionale'].forEach(k=>{
+    const elB=document.getElementById('vb-G-'+k+'-b'); if(elB) VB.G[k+'_b']=elB.value;
+  });
+  try{ localStorage.setItem(LS_VB_KEY,JSON.stringify(VB)); } catch(e){}
+}
+function vbN(id){ const el=document.getElementById(id); if(!el||el.value==='') return 0; return parseFloat(el.value.replace(',','.'))||0; }
+// Legge il campo bolletta (-b) se compilato, altrimenti il campo calcolato (base)
+function vbVoce(base){ const bId=base+'-b'; const elB=document.getElementById(bId); if(elB&&elB.value!=='') return parseFloat(elB.value.replace(',','.'))||0; return vbN(base); }
+function vbCalcola(){
+  vbAggiornaCampiArera();
+  vbSave();
+  ['L','G'].forEach(t=>{
+    const cons = t==='L' ? vbN('vb-L-kwh') : vbN('vb-G-smc');
+    const prezzo=vbN('vb-'+t+'-prezzo');
+    const quota=vbN('vb-'+t+'-quota');
+    // Usa valore bolletta se inserito, altrimenti calcolato
+    const trafisso=vbVoce('vb-'+t+'-trafisso');
+    const travar=vbVoce('vb-'+t+'-travar');
+    const oneri=vbVoce('vb-'+t+'-oneri');
+    const cdispd=t==='L' ? vbVoce('vb-L-cdispd') : 0;
+    const accise=vbVoce('vb-'+t+'-accise');
+    const iva=vbN('vb-'+t+'-iva');
+    const reale=vbN('vb-'+t+'-reale');
+    const canonetv=t==='L' ? vbN('vb-L-canonetv') : 0;
+
+    // Somma voci extra
+    let extraTot=0;
+    (VB[t].voci||[]).forEach((v,i)=>{
+      const elV=document.getElementById('vb-'+t+'-voce-val-'+i);
+      const elS=document.getElementById('vb-'+t+'-voce-seg-'+i);
+      if(elV){ const val=parseFloat(elV.value.replace(',','.'))||0; const seg=elS?elS.value:'+'; extraTot+=(seg==='-'?-val:val); }
+    });
+
+    const elCalc=document.getElementById('vb-'+t+'-calc');
+    const elScarto=document.getElementById('vb-'+t+'-scarto');
+    const elIvaEur=document.getElementById('vb-'+t+'-iva-eur');
+    const elCalcConCanone=t==='L'?document.getElementById('vb-L-calc-con-canone'):null;
+
+    if(!cons&&!prezzo&&!quota){
+      elCalc.textContent='—'; elScarto.textContent='—';
+      if(elIvaEur) elIvaEur.textContent='—';
+      if(elCalcConCanone) elCalcConCanone.textContent='—';
+      return;
+    }
+
+    // Gas: IVA tripla aliquota
+    //   10%: materia prima (gas + PCS) + trasporto variabile + oneri + accise + addRegionale + extra
+    //   22%: quota commercializzazione + trasporto fisso (quote fisse rete sul mercato libero)
+    const aG = t==='G' ? (S.arera||areraDefault()) : null;
+    // PCS e addRegionale: usa campo bolletta (-b) se inserito, altrimenti campo calcolato (popolato da vbAggiornaCampiArera)
+    const pcsG    = t==='G' ? vbVoce('vb-G-pcs')          : 0;
+    const addRegG = t==='G' ? vbVoce('vb-G-addregionale') : 0;
+    const imponibile10 = cons*prezzo + pcsG + travar + oneri + cdispd + accise + addRegG + extraTot;
+    const imponibile22 = quota + trafisso;  // fissi a 22% sul mercato libero
+    const imponibile = imponibile10 + imponibile22;
+    let ivaEur;
+    if(t==='G'){
+      const ivaQuotaPerc = vbN('vb-G-iva-quota') || 22;
+      ivaEur = imponibile10 * (iva/100) + imponibile22 * (ivaQuotaPerc/100);
+    } else {
+      ivaEur = imponibile * (iva/100);
+    }
+    const totCalc = imponibile + ivaEur;
+
+    if(elIvaEur) elIvaEur.textContent = fmtEur(ivaEur);
+    elCalc.textContent = fmtEur(totCalc);
+
+    // Popola riquadro composizione dettaglio
+    const setDet=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v!==null?fmtEur(v):'—'; };
+    if(t==='L'){
+      const arераL = trafisso + travar + oneri + cdispd + accise + extraTot;
+      setDet('vb-L-det-materia', cons*prezzo);
+      setDet('vb-L-det-quota',   quota);
+      setDet('vb-L-det-arera',   arераL);
+      setDet('vb-L-det-iva',     ivaEur);
+      setDet('vb-L-det-tot',     totCalc);
+    } else {
+      const arеraGvar = travar + oneri + accise + addRegG + extraTot;
+      setDet('vb-G-det-materia',  cons*prezzo);
+      setDet('vb-G-det-pcs',      pcsG);
+      setDet('vb-G-det-quota',    quota);
+      setDet('vb-G-det-trafisso', trafisso);
+      setDet('vb-G-det-arera',    arеraGvar);
+      setDet('vb-G-det-iva',      ivaEur);
+      setDet('vb-G-det-tot',      totCalc);
+    }
+
+    // Luce: mostra anche totale con canone TV
+    if(elCalcConCanone){
+      if(canonetv>0) elCalcConCanone.textContent = fmtEur(totCalc + canonetv);
+      else elCalcConCanone.textContent='—';
+    }
+
+    if(reale>0){
+      // confronto energia pura: reale meno canone TV
+      const realeNetto = reale - canonetv;
+      const sc=realeNetto-totCalc;
+      const pct=(sc/realeNetto*100);
+      elScarto.textContent=(sc>=0?'+':'')+fmtEur(sc)+' ('+pct.toFixed(1).replace('.',',')+'%)';
+      elScarto.style.color=Math.abs(pct)<2?'var(--green)':Math.abs(pct)<5?'#e67e22':'#e53e3e';
+    } else {
+      elScarto.textContent='—'; elScarto.style.color='';
+    }
+  });
+}
+function vbAddVoce(t){
+  VB[t].voci.push({desc:'',val:'',seg:'+'});
+  vbRenderVoci(t); vbCalcola();
+}
+function vbDelVoce(t,i){
+  VB[t].voci.splice(i,1); vbRenderVoci(t); vbCalcola();
+}
+function vbRenderVoci(t){
+  const el=document.getElementById('vb-'+t+'-voci'); if(!el) return;
+  el.innerHTML=(VB[t].voci||[]).map((v,i)=>`
+    <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
+      <select id="vb-${t}-voce-seg-${i}" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;width:40px" oninput="vbCalcola()">
+        <option value="+" ${v.seg!=='-'?'selected':''}>+</option>
+        <option value="-" ${v.seg==='-'?'selected':''}>−</option>
+      </select>
+      <input type="text" id="vb-${t}-voce-desc-${i}" value="${esc(v.desc)}" placeholder="descrizione" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;flex:1" oninput="vbSaveVoce('${t}',${i})">
+      <input type="text" id="vb-${t}-voce-val-${i}" value="${v.val}" placeholder="0,00" inputmode="decimal" style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:2px 6px;width:70px;text-align:right" oninput="vbCalcola()">
+      <button onclick="vbDelVoce('${t}',${i})" style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:14px;padding:0 2px" title="Rimuovi">✕</button>
+    </div>`).join('');
+}
+function vbSaveVoce(t,i){
+  const elD=document.getElementById('vb-'+t+'-voce-desc-'+i);
+  const elV=document.getElementById('vb-'+t+'-voce-val-'+i);
+  const elS=document.getElementById('vb-'+t+'-voce-seg-'+i);
+  if(VB[t].voci[i]){
+    if(elD) VB[t].voci[i].desc=elD.value;
+    if(elV) VB[t].voci[i].val=elV.value;
+    if(elS) VB[t].voci[i].seg=elS.value;
+  }
+}
+// ── FINE VERIFICA BOLLETTA ──────────────────────────────────
+
+loadState();
+renderProfiloSelect();
+renderAll();
+initDisclaimer();
+vbLoad();
+
+// ── Service Worker & aggiornamento ──
+let _swReg = null;
+function aggiornaApp(){
+  if(_swReg && _swReg.waiting){
+    _swReg.waiting.postMessage('skipWaiting');
+  } else {
+    window.location.reload();
+  }
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    _swReg = reg;
+    // Controlla aggiornamenti ogni volta che la pagina torna in primo piano
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible') reg.update();
+    });
+    // Nuovo SW in attesa = nuova versione disponibile
+    const mostraBtnAggiorna = () => {
+      const btn = document.getElementById('btn-aggiorna-app');
+      if(btn) btn.classList.remove('hidden');
+    };
+    if(reg.waiting) mostraBtnAggiorna();
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      nw.addEventListener('statechange', () => {
+        if(nw.state === 'installed' && navigator.serviceWorker.controller) mostraBtnAggiorna();
+      });
+    });
+  });
+  // Ricarica automatica dopo skipWaiting
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+
+  // Controlla version.json per aggiornamenti (confronto versione)
+  fetch('./version.json?t=' + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      if(data.version && data.version !== APP_VERSION){
+        const btn = document.getElementById('btn-aggiorna-app');
+        if(btn) btn.classList.remove('hidden');
+      }
+    }).catch(()=>{});
+}
+</script>
+</body>
+</html>
