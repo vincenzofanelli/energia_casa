@@ -7,7 +7,7 @@
 <script>
 // ── COSTANTE VERSIONE PROGRAMMA ──
 const APP_VERSION_DATE = '25/11/2026'; // aggiornare quando il programma è pronto per l'uso
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 const LS_DISCLAIMER_KEY = 'energiaCasaDisclaimer';
 </script>
 <style>
@@ -479,19 +479,22 @@ table.offerte td input.ci.c-warn { background: var(--yellow-bg) !important; }
         </div>
         <!-- ADDIZIONALE REGIONALE GAS -->
         <div class="mt12" id="blk-addRegionale">
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">🔥 Gas — Addizionale regionale (€/Smc)</div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <input type="number" id="a-G_addRegionale" step="0.0001" style="width:110px" oninput="aggiornaStalenessAddReg()">
-            <button type="button" class="btn btn-neutral btn-sm" onclick="confermAddRegionale()" title="Confermo che il valore è aggiornato — azzera il contatore dei 90 giorni">✔ Confermo aggiornato</button>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">🔥 Gas — Addizionale regionale (scaglioni progressivi)</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+            Imposta regionale su consumi gas annui (usi civili). Gli scaglioni si applicano sul consumo annuo (Smc/anno). Solo regioni a statuto ordinario.
           </div>
-          <div id="warn-addReg" style="display:none;margin-top:6px;font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid #feb2b2;background:#fff5f5;color:#c53030">
-            ⚠️ <strong>Campo non aggiornato da oltre 90 giorni.</strong> Verifica il valore sul sito della tua regione o sulla bolletta gas.<br>
-            Cerca "<em>addizionale regionale accisa gas metano [nome regione]</em>" oppure consulta il fornitore gas.<br>
+          <div id="addReg-scaglioni-form"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn btn-neutral btn-sm" onclick="addRegAggiungiScaglione()">+ Fascia</button>
+            <button type="button" class="btn btn-neutral btn-sm" onclick="confermAddRegionale()" style="border-color:#68d391;color:#276749;background:#f0fff4">✔ Confermo aggiornato</button>
+          </div>
+          <div id="warn-addReg" style="display:none;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid #feb2b2;background:#fff5f5;color:#c53030">
+            ⚠️ <strong>Aliquote non verificate per l'anno in corso.</strong> Controlla sul sito della tua regione o sulla bolletta.<br>
+            Cerca "<em>addizionale regionale accisa gas metano [nome regione]</em>".<br>
             <span style="color:var(--muted);font-size:10px">Ultimo aggiornamento: <span id="addReg-data-txt">—</span></span>
           </div>
           <div id="info-addReg" style="margin-top:4px;font-size:11px;color:var(--muted)">
-            Imposta regionale su consumi gas (usi civili). Solo regioni a statuto ordinario — Lombardia ha disapplicato. Regioni a statuto speciale (Sicilia, Sardegna, Valle d'Aosta, Trentino-Alto Adige, Friuli-V.G.) esenti.<br>
-            <span id="addReg-data-ok" style="display:none">Ultimo aggiornamento: <span id="addReg-data-ok-txt">—</span></span>
+            <span id="addReg-data-ok" style="display:none">✓ Aggiornata il: <span id="addReg-data-ok-txt">—</span></span>
           </div>
         </div>
         <!-- ARERA -->
@@ -1150,6 +1153,7 @@ function toggleImp(){
     if(elKw) checkPotenzakW(elKw);
     // Mostra staleness addizionale regionale
     renderAddRegStale();
+    renderAddRegForm();
     _setImpBtns(true);
   } else {
     saveImp();
@@ -1270,11 +1274,12 @@ function renderAddRegStale(){
     if(okSpan) okSpan.style.display='none';
     return;
   }
-  const giorni = Math.floor((Date.now()-new Date(at).getTime())/(1000*60*60*24));
+  const annoAt = new Date(at).getFullYear();
+  const annoOggi = new Date().getFullYear();
   const datalegg = new Date(at).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
-  if(giorni>90){
+  if(annoAt < annoOggi){
     warn.style.display='block';
-    if(warnTxt) warnTxt.textContent=datalegg+' ('+giorni+' giorni fa)';
+    if(warnTxt) warnTxt.textContent=datalegg;
     if(okSpan) okSpan.style.display='none';
   } else {
     warn.style.display='none';
@@ -1472,21 +1477,14 @@ function renderImpView(){
       const annoAt=at ? new Date(at).getFullYear() : 0;
       const annoOggi=new Date().getFullYear();
       const stale=!at || annoAt < annoOggi;
-      const smcAnnuo=(S.imp&&S.imp.smc)||0;
-      const mediaEff=addRegionaleMedia(smcAnnuo);
-      const sc=a.G_addRegScaglioni||(a.G_addRegionale?[{fino:null,aliquota:a.G_addRegionale}]:[]);
-      const hasScaglioni=sc.length>1 || (sc.length===1 && sc[0].fino!==null);
-      const valLabel=hasScaglioni
-        ? `<div class="imp-val" style="font-size:11px;font-weight:600">${mediaEff.toFixed(4)} €/Smc <span style="font-size:9px;font-weight:400;color:var(--muted)">(media)</span></div>`
-        : `<div class="imp-val" style="font-size:12px;font-weight:600">${mediaEff.toFixed(4)} €/Smc</div>`;
-      const dataLabel=at
-        ? `<div style="font-size:9px;color:${stale?'#c53030':'var(--muted)'};margin-top:2px">${stale?'⚠️ verificare per '+annoOggi+' — ':''}agg. ${new Date(at).toLocaleDateString('it')}</div>`
-        : `<div style="font-size:9px;color:#c53030;margin-top:2px">⚠️ mai confermato</div>`;
       const boxBorder=stale?'border:1.5px solid #fc8181':'border:1.5px solid var(--border)';
-      return `<div class="imp-box" style="${boxBorder};cursor:pointer" title="Clicca per modificare gli scaglioni" onclick="addRegBoxEdit(this)">
+      const statoLabel=stale
+        ? `<div style="font-size:10px;color:#c53030;margin-top:3px;font-weight:600">⚠️ verificare per ${annoOggi}</div>`
+        : `<div style="font-size:10px;color:var(--green,#16a34a);margin-top:3px;font-weight:600">✓ aggiornata ${annoOggi}</div>`;
+      return `<div class="imp-box" style="${boxBorder}">
         <div class="imp-label">🔥 Add. regionale gas</div>
-        ${valLabel}
-        ${dataLabel}
+        ${statoLabel}
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Modifica in ✏️ Impostazioni</div>
       </div>`;
     })()}
     <div class="imp-box"><div class="imp-label">🏛️ Componenti ARERA</div><div style="font-size:12px">${linkL?`<a href="${esc(linkL)}" target="_blank" rel="noopener" style="color:var(--purple)">Fonte: ARERA</a>`:(linkG?`<a href="${esc(linkG)}" target="_blank" rel="noopener" style="color:var(--purple)">Fonte: ARERA</a>`:'ARERA')}</div></div>
@@ -1520,6 +1518,70 @@ function punBoxEdit(boxEl, key){
     if(e.key==='Escape'){ cancel(); }
   });
   inp.addEventListener('blur',()=>{ setTimeout(()=>{ if(boxEl.querySelector('input')) commit(); },150); });
+}
+
+// Renderizza il form scaglioni addizionale regionale nelle impostazioni
+function renderAddRegForm(){
+  const a=S.arera||(S.arera=areraDefault());
+  if(!a.G_addRegScaglioni||a.G_addRegScaglioni.length===0){
+    a.G_addRegScaglioni=[{fino:null,aliquota:a.G_addRegionale||0.030980}];
+  }
+  const sc=a.G_addRegScaglioni;
+  const cont=document.getElementById('addReg-scaglioni-form');
+  if(!cont) return;
+  let html='<table style="border-collapse:collapse;font-size:12px;width:100%"><thead><tr style="color:var(--muted)"><th style="text-align:left;padding:2px 6px;font-weight:500">Da (Smc)</th><th style="text-align:left;padding:2px 6px;font-weight:500">Fino a (Smc)</th><th style="text-align:left;padding:2px 6px;font-weight:500">Aliquota (€/Smc)</th><th></th></tr></thead><tbody>';
+  let sogliaDa=0;
+  for(let i=0;i<sc.length;i++){
+    const s=sc[i];
+    const isLast=i===sc.length-1;
+    html+=`<tr>
+      <td style="padding:3px 6px;color:var(--muted)">${sogliaDa===0?'0':sogliaDa+1}</td>
+      <td style="padding:3px 6px">${isLast
+        ? '<span style="color:var(--muted)">oltre</span>'
+        : `<input type="number" data-si="${i}" data-field="fino" value="${s.fino||''}" min="1" step="1" style="width:70px;font-size:12px;border:1px solid var(--border);border-radius:4px;padding:2px 4px" onchange="addRegSalvaScaglioni()">`
+      }</td>
+      <td style="padding:3px 6px"><input type="number" data-si="${i}" data-field="aliquota" value="${s.aliquota.toFixed(4)}" step="0.0001" min="0" style="width:90px;font-size:12px;border:1px solid var(--border);border-radius:4px;padding:2px 4px" onchange="addRegSalvaScaglioni()"></td>
+      <td style="padding:3px 6px">${sc.length>1?`<span style="cursor:pointer;color:#c53030;font-size:14px" onclick="addRegRimuoviScaglione(${i})" title="Rimuovi">×</span>`:''}</td>
+    </tr>`;
+    sogliaDa=s.fino||0;
+  }
+  html+='</tbody></table>';
+  cont.innerHTML=html;
+}
+function addRegSalvaScaglioni(){
+  const a=S.arera||(S.arera=areraDefault());
+  const cont=document.getElementById('addReg-scaglioni-form');
+  if(!cont) return;
+  cont.querySelectorAll('input[data-si]').forEach(inp=>{
+    const i=parseInt(inp.dataset.si);
+    const f=inp.dataset.field;
+    const v=parseFloat(inp.value)||0;
+    if(!a.G_addRegScaglioni[i]) return;
+    if(f==='fino') a.G_addRegScaglioni[i].fino=v||null;
+    if(f==='aliquota') a.G_addRegScaglioni[i].aliquota=v;
+  });
+  if(a.G_addRegScaglioni.length>0) a.G_addRegScaglioni[a.G_addRegScaglioni.length-1].fino=null;
+  a.G_addRegionale=a.G_addRegScaglioni[a.G_addRegScaglioni.length-1].aliquota;
+  S.arera=a; saveState(); refreshRisultati(); renderImpView();
+}
+function addRegAggiungiScaglione(){
+  const a=S.arera||(S.arera=areraDefault());
+  if(!a.G_addRegScaglioni) a.G_addRegScaglioni=[{fino:null,aliquota:0.030980}];
+  addRegSalvaScaglioni();
+  const sc=a.G_addRegScaglioni;
+  const lastFino=sc.length>1?(sc[sc.length-2].fino||120):120;
+  const lastAliq=sc[sc.length-1].aliquota;
+  sc[sc.length-1].fino=lastFino+120;
+  sc.push({fino:null,aliquota:lastAliq});
+  S.arera=a; saveState(); renderAddRegForm();
+}
+function addRegRimuoviScaglione(i){
+  const a=S.arera||(S.arera=areraDefault());
+  if(!a.G_addRegScaglioni||a.G_addRegScaglioni.length<=1) return;
+  a.G_addRegScaglioni.splice(i,1);
+  a.G_addRegScaglioni[a.G_addRegScaglioni.length-1].fino=null;
+  a.G_addRegionale=a.G_addRegScaglioni[a.G_addRegScaglioni.length-1].aliquota;
+  S.arera=a; saveState(); refreshRisultati(); renderImpView(); renderAddRegForm();
 }
 
 function addRegBoxEdit(boxEl){
