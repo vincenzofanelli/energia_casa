@@ -7,7 +7,7 @@
 <script>
 // ── COSTANTE VERSIONE PROGRAMMA ──
 const APP_VERSION_DATE = '25/11/2026'; // aggiornare quando il programma è pronto per l'uso
-const APP_VERSION = '1.0.4';
+const APP_VERSION = '1.0.6';
 const LS_DISCLAIMER_KEY = 'energiaCasaDisclaimer';
 </script>
 <style>
@@ -820,9 +820,14 @@ function areraDefault(){
     G_trasportoVar:     0.275191,// €/Smc — QTV+QTt+RS+UG1 (IVA 10%)
     G_oneri:            0.086309,// €/Smc — RE+UG2var+UG3FT+UG3INT+UG3UI (IVA 10%)
     G_pcs:              0.013143,// €/Smc — PCS potere calorifico superiore (IVA 10%)
-    G_accise:           0.135000,// €/Smc — imposta erariale
-    G_addRegionale:     0.030980,// €/Smc — aliquota flat fallback (usata se scaglioni non configurati)
-    G_addRegScaglioni:  [{fino:120,aliquota:0.019000},{fino:null,aliquota:0.030980}],// scaglioni progressivi (Puglia 2026)
+    G_accise:           0.135000,// €/Smc — imposta erariale (2°-4° scaglione; varia per scaglione)
+    G_addRegionale:     0.030980,// €/Smc — aliquota flat fallback (ultimo scaglione)
+    G_addRegScaglioni:  [        // scaglioni progressivi addizionale regionale (Puglia 2026)
+      {fino:120,  aliquota:0.019000},
+      {fino:480,  aliquota:0.030980},
+      {fino:1560, aliquota:0.030980},
+      {fino:null, aliquota:0.030980}
+    ],
     addRegionaleAt:     '2026-10-01',// data ultimo aggiornamento addizionale regionale
     G_ivaBase:          10,      // % IVA su componenti variabili
     G_ivaExtra:         22,      // % IVA oltre 480 Smc (non usata nel VB, solo motore offerte)
@@ -2162,7 +2167,7 @@ function renderOfferte(){
     op.righe.forEach((r,ri)=>{
       const isL=r.tipo==='luce';
       const v=calcolaRiga(r);
-      const isBest=(isL&&v!=null&&v.materia===bL)||(!isL&&v!=null&&v.materia===bG);
+      const isBest=!_opScaduta&&((isL&&v!=null&&v.materia===bL)||(!isL&&v!=null&&v.materia===bG));
       const lblCls=isL?'luce-row':'gas-row';
       const badge=`<span class="badge badge-${isL?'luce':'gas'}">${isL?'Luce':'Gas'}</span>`;
       const rn=`rpd_${oi}_${ri}`;
@@ -2360,7 +2365,9 @@ function refreshRisultati(){
     if(isNaN(ri)) return;
     const r=S.operatori[oi]?.righe[ri]; if(!r) return;
     const v=calcolaRiga(r);
-    const isBest=(r.tipo==='luce'&&v!=null&&v.materia===bL)||(r.tipo==='gas'&&v!=null&&v.materia===bG);
+    const _scOp=S.operatori[oi]?.scadenza||'';
+    const _opScadutaR=_scOp&&new Date(_scOp)<new Date(new Date().setHours(0,0,0,0));
+    const isBest=!_opScadutaR&&((r.tipo==='luce'&&v!=null&&v.materia===bL)||(r.tipo==='gas'&&v!=null&&v.materia===bG));
     const td=tr.querySelector('td.ris');
     if(td){
       td.innerHTML=v!=null

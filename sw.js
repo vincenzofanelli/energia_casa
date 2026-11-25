@@ -1,5 +1,5 @@
 // ── Service Worker — Energia Casa ──
-const CACHE_NAME = 'energia-casa-v1.0.4';
+const CACHE_NAME = 'energia-casa-v1.0.6';
 const FILES = [
   './',
   './index.html',
