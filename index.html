@@ -6,8 +6,8 @@
 <title>FacchiNelli - Energia Casa</title>
 <script>
 // ── COSTANTE VERSIONE PROGRAMMA ──
-const APP_VERSION_DATE = '25/11/2026'; // aggiornare quando il programma è pronto per l'uso
-const APP_VERSION = '1.0.7';
+const APP_VERSION_DATE = '27/11/2026'; // aggiornare quando il programma è pronto per l'uso
+const APP_VERSION = '1.0.8';
 const LS_DISCLAIMER_KEY = 'energiaCasaDisclaimer';
 </script>
 <style>
@@ -504,7 +504,12 @@ table.offerte td input.ci.c-warn { background: var(--yellow-bg) !important; }
               🏛️ Componenti ARERA regolate (trasporto, oneri, accise, IVA) — clicca per espandere
             </summary>
             <div style="margin-top:10px;background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)">
-              <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Questi valori vengono usati per stimare il costo totale realistico della bolletta. Sono fissati da ARERA e uguali per tutti gli operatori. Modifica solo se conosci i valori aggiornati.</div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Questi valori vengono usati per stimare il costo totale realistico della bolletta. Sono fissati da ARERA e uguali per tutti gli operatori. Modifica solo se conosci i valori aggiornati.</div>
+              <div style="font-size:11px;background:#fffbeb;border:1px solid #f6e05e;border-radius:6px;padding:8px 10px;margin-bottom:10px;color:#744210">
+                📍 <strong>Parametri tarati su Bari/Puglia (bolletta Octopus ottobre 2026).</strong><br>
+                Se usi l'app da un'altra regione, il <strong>ranking delle offerte rimane corretto</strong> ovunque in Italia — le componenti ARERA si cancellano nel confronto tra operatori.<br>
+                La <strong>stima della spesa annua</strong> in euro potrebbe invece differire dalla tua bolletta reale. Per una stima precisa, aggiorna i parametri usando i valori riportati nella tua ultima bolletta: in quel caso il risultato sarà più accurato di qualsiasi simulatore online.
+              </div>
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                 <!-- LUCE ARERA -->
@@ -695,7 +700,7 @@ table.offerte td input.ci.c-warn { background: var(--yellow-bg) !important; }
             <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
               <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Componenti ARERA periodo</div>
-              <span style="font-size:10px;color:var(--muted)" title="Parametri tarati su bolletta Bari (distributore Italgas). Le componenti di trasporto variano per distributore locale.">📍 Bari/Italgas</span>
+              <span style="font-size:10px;color:var(--muted)" title="Parametri tarati su bolletta Bari (distributore Italgas). Il ranking offerte è corretto ovunque in Italia; aggiorna i parametri nelle Impostazioni › ARERA per una stima della spesa più precisa.">📍 Bari/Italgas</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 72px 72px;gap:4px 6px;font-size:11px;color:var(--muted);font-weight:600;padding:0 2px;margin-bottom:2px">
               <span></span><span style="text-align:right">calcolato</span><span style="text-align:right">bolletta</span>
